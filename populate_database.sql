@@ -70,7 +70,7 @@ VALUES
     (4, 4, 3, 'It was okay, but the weather was bad.', '2026-03-26 10:00:00'),
 	(5, 5, 5, 'Great community involvement!', '2026-04-02 11:00:00');
 
-INSERT INTO eventregistrations (event_id, volunteer_id, attendance_type, registered_at)
+INSERT INTO eventregistrations (event_id, volunteer_id, attendance, registered_at)
 VALUES
     (1, 1, 'Present', '2026-03-09 09:00:00'),
     (2, 2, 'Late', '2026-03-14 09:30:00'),
