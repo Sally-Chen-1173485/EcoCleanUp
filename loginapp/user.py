@@ -42,7 +42,10 @@ def root():
     - get: Redirects guests to the login page, and redirects logged-in users to
         their own role-specific homepage.
     """
-    return redirect(user_home_url())
+    if 'loggedin' in session:
+        return redirect(user_home_url())
+    else:
+        return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -76,7 +79,7 @@ def login():
             # equally valid to put the whole SQL statement on one line like we
             # do at the beginning of the `signup` function.
             cursor.execute('''
-                           SELECT user_id, username, password_hash, person_role
+                           SELECT user_id, username, password_hash, role
                            FROM users
                            WHERE username = %s;
                            ''', (username,))
@@ -100,7 +103,7 @@ def login():
                     session['loggedin'] = True
                     session['user_id'] = account['user_id']
                     session['username'] = account['username']
-                    session['role'] = account['person_role']
+                    session['role'] = account['role']
 
                     return redirect(user_home_url())
                 else:
@@ -230,7 +233,7 @@ def signup():
             # possibility, and display a more useful message to the user.
             with db.get_cursor() as cursor:
                 cursor.execute('''
-                               INSERT INTO users (username, password_hash, email, person_role)
+                               INSERT INTO users (username, password_hash, email, role)
                                VALUES (%s, %s, %s, %s);
                                ''',
                                (username, password_hash, email, DEFAULT_USER_ROLE,))
@@ -259,7 +262,7 @@ def profile():
 
     # Retrieve user profile from the database.
     with db.get_cursor() as cursor:
-        cursor.execute('SELECT username, email, person_role FROM users WHERE user_id = %s;',
+        cursor.execute('SELECT username, email, role FROM users WHERE user_id = %s;',
                        (session['user_id'],))
         profile = cursor.fetchone()
 

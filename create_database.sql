@@ -99,3 +99,14 @@ CREATE TABLE IF NOT EXISTS eventregistrations
         ON UPDATE CASCADE
 );
 
+--because we are using from a previous template, we need to update the user_role enum and the existing data to match the new roles
+ALTER TYPE user_role ADD VALUE 'Volunteers';
+ALTER TYPE user_role ADD VALUE 'Event Leaders';
+ALTER TYPE user_role ADD VALUE 'Administrators';
+
+UPDATE users SET person_role = 'Volunteers' WHERE person_role = 'customer';
+UPDATE users SET person_role = 'Event Leaders' WHERE person_role = 'staff';
+UPDATE users SET person_role = 'Administrators' WHERE person_role = 'admin';
+
+--change column to align with the ERD table
+ALTER TABLE users RENAME COLUMN person_role TO role;
