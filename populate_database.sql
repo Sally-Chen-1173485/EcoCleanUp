@@ -1,4 +1,4 @@
-INSERT INTO users (username, password_hash, email, person_role)
+INSERT INTO users (username, password_hash, email, role)
 VALUES
 	('customer1', '$2b$12$3W3b9AnL6umkIBm6THGHB.yId0/GuR/Gi7R8ZevTwR0xi3o8rrvZa', 'customer1@example.com', 'customer'),
 	('customer2', '$2b$12$6KPIL1c77kZpDXzDDRuJV.ielxGNDUIJPkxl0K5JdQoZTMrcIMBym', 'customer2@example.com', 'customer'),
@@ -8,7 +8,7 @@ VALUES
 
 
 	-- Insert users with real names and hashed passwords-created by AI.
-INSERT INTO users (username, password_hash, email, person_role) 
+INSERT INTO users (username, password_hash, email, role) 
 VALUES
     ('alice_williams', '$2b$12$3W3b9AnL6umkIBm6THGHB.yId0/GuR/Gi7R8ZevTwR0xi3o8rrvZa', 'alice.williams@example.com', 'customer'),
     ('bob_smith', '$2b$12$6KPIL1c77kZpDXzDDRuJV.ielxGNDUIJPkxl0K5JdQoZTMrcIMBym', 'bob.smith@example.com', 'customer'),
