@@ -82,3 +82,75 @@ VALUES
 	(8, 3, 'Late', '2026-03-19 11:00:00'),
 	(9, 4, 'Present', '2026-03-24 12:30:00'),
 	(10, 5, 'Excused', null);
+
+
+UPDATE users
+SET
+    full_name = CASE 
+        WHEN username = 'customer1' THEN 'Customer One'
+        WHEN username = 'customer2' THEN 'Customer Two'
+        WHEN username = 'staff1' THEN 'Staff One'
+        WHEN username = 'staff2' THEN 'Staff Two'
+        WHEN username = 'admin1' THEN 'Admin One'
+        WHEN username = 'alice_williams' THEN 'Alice Williams'
+        WHEN username = 'bob_smith' THEN 'Bob Smith'
+        WHEN username = 'carol_jones' THEN 'Carol Jones'
+        WHEN username = 'david_brown' THEN 'David Brown'
+        WHEN username = 'emma_davis' THEN 'Emma Davis'
+        WHEN username = 'frank_martin' THEN 'Frank Martin'
+        WHEN username = 'grace_clark' THEN 'Grace Clark'
+        WHEN username = 'hannah_lee' THEN 'Hannah Lee'
+        WHEN username = 'ian_king' THEN 'Ian King'
+        WHEN username = 'jack_moore' THEN 'Jack Moore'
+        WHEN username = 'karen_wilson' THEN 'Karen Wilson'
+        WHEN username = 'lucas_taylor' THEN 'Lucas Taylor'
+        WHEN username = 'mona_lee' THEN 'Mona Lee'
+        WHEN username = 'noah_sanders' THEN 'Noah Sanders'
+        WHEN username = 'olivia_smith' THEN 'Olivia Smith'
+        WHEN username = 'paul_baker' THEN 'Paul Baker'
+        WHEN username = 'queen_carter' THEN 'Queen Carter'
+        ELSE full_name
+    END,
+    contact_number = CASE 
+        WHEN username = 'customer1' THEN '123-456-7890'
+        WHEN username = 'customer2' THEN '234-567-8901'
+        WHEN username = 'staff1' THEN '345-678-9012'
+        WHEN username = 'staff2' THEN '456-789-0123'
+        WHEN username = 'admin1' THEN '567-890-1234'
+        WHEN username = 'alice_williams' THEN '123-456-7890'
+        WHEN username = 'bob_smith' THEN '234-567-8901'
+        WHEN username = 'carol_jones' THEN '345-678-9012'
+        WHEN username = 'david_brown' THEN '456-789-0123'
+        -- Continue similarly for others
+        ELSE contact_number
+    END,
+    home_address = CASE 
+        WHEN username = 'customer1' THEN '123 Green Street, City'
+        WHEN username = 'customer2' THEN '234 Blue Avenue, City'
+        WHEN username = 'staff1' THEN '345 Red Road, City'
+        WHEN username = 'staff2' THEN '456 Yellow Blvd, City'
+        WHEN username = 'admin1' THEN '567 White Lane, City'
+        WHEN username = 'alice_williams' THEN '123 Green Street, City'
+        -- Continue similarly for others
+        ELSE home_address
+    END,
+    profile_image = CASE 
+        WHEN username = 'customer1' THEN 'customer1_profile.jpg'
+        WHEN username = 'customer2' THEN 'customer2_profile.jpg'
+        WHEN username = 'staff1' THEN 'staff1_profile.jpg'
+        WHEN username = 'staff2' THEN 'staff2_profile.jpg'
+        WHEN username = 'admin1' THEN 'admin1_profile.jpg'
+        WHEN username = 'alice_williams' THEN 'alice_profile.jpg'
+        -- Continue similarly for others
+        ELSE profile_image
+    END,
+    environmental_interests = CASE 
+        WHEN username = 'customer1' THEN 'Recycling, Sustainability'
+        WHEN username = 'customer2' THEN 'Energy Conservation, Green Living'
+        WHEN username = 'staff1' THEN 'Waste Reduction, Solar Power'
+        WHEN username = 'staff2' THEN 'Composting, Urban Farming'
+        WHEN username = 'admin1' THEN 'Environmental Policy, Eco Innovation'
+        WHEN username = 'alice_williams' THEN 'Green Energy, Water Conservation'
+        -- Continue similarly for others
+        ELSE environmental_interests
+    END;

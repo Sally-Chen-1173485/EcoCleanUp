@@ -14,7 +14,7 @@ def staff_home():
      """
      if 'loggedin' not in session:
           return redirect(url_for('login'))
-     elif session['role']!='staff':
+     elif session['role']!='Event Leaders':
           return render_template('access_denied.html'), 403
 
      return render_template('staff_home.html')

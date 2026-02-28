@@ -1,0 +1,55 @@
+:root {
+    --theme-deepblue: #001f3f;
+    --theme-darker: #000d1a;
+    --theme-text: #ffffff;
+    --theme-light-bg: #111a2b;
+}
+
+/* color and background helpers */
+body {
+    background-color: var(--theme-darker);
+    color: var(--theme-text);
+}
+
+/* navbar/footer */
+.navbar,
+.bg-secondary,
+footer {
+    background-color: var(--theme-deepblue) !important;
+}
+
+/* primary buttons/blocks */
+.bg-primary,
+.btn-primary {
+    background-color: var(--theme-deepblue) !important;
+    border-color: var(--theme-deepblue) !important;
+}
+
+/* links */
+a,
+.nav-link {
+    color: var(--theme-text) !important;
+}
+a:hover,
+.nav-link:hover {
+    color: #cccccc !important;
+}
+
+/* re-style white backgrounds so they aren’t too bright */
+.bg-white {
+    background-color: var(--theme-light-bg) !important;
+    color: var(--theme-text);
+}
+
+/* hero section used on public home page */
+.hero-section {
+    background: linear-gradient(135deg, #001f3f 0%, #000d1a 100%);
+    color: white;
+    padding: 80px 20px;
+    text-align: center;
+}
+
+.btn-action {
+    margin: 0 10px;
+    font-weight: bold;
+}

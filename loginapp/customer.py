@@ -34,7 +34,7 @@ def customer_home():
      if 'loggedin' not in session:
           # The user isn't logged in, so redirect them to the login page.
           return redirect(url_for('login'))
-     elif session['role']!='customer':
+     elif session['role']!='Volunteers':
           # The user isn't logged in with a customer account, so return an
           # "Access Denied" page instead. We don't do a redirect here, because
           # we're not sending them somewhere else: just delivering an

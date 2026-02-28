@@ -110,3 +110,18 @@ UPDATE users SET person_role = 'Administrators' WHERE person_role = 'admin';
 
 --change column to align with the ERD table
 ALTER TABLE users RENAME COLUMN person_role TO role;
+
+ALTER TABLE users
+  ADD COLUMN full_name VARCHAR(100) NOT NULL DEFAULT '',
+  ADD COLUMN contact_number VARCHAR(20),
+  ADD COLUMN home_address VARCHAR(255),
+  ADD COLUMN profile_image VARCHAR(255),
+  ADD COLUMN environmental_interests VARCHAR(255);
+  ALTER COLUMN username TYPE VARCHAR(50);
+
+ALTER TABLE users
+ALTER COLUMN username TYPE VARCHAR(50);
+
+ALTER TABLE users
+ALTER COLUMN email TYPE VARCHAR(100);
+

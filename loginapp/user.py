@@ -9,7 +9,7 @@ import re
 flask_bcrypt = Bcrypt(app)
 
 # Default role assigned to new users upon registration.
-DEFAULT_USER_ROLE = 'customer'
+DEFAULT_USER_ROLE = 'Volunteers'
 
 def user_home_url():
     """Generates a URL to the homepage for the currently logged-in user.
@@ -21,11 +21,11 @@ def user_home_url():
     if 'loggedin' in session:
         role = session.get('role', None)
 
-        if role=='customer':
+        if role == 'Volunteers':
             home_endpoint='customer_home'
-        elif role=='staff':
+        elif role == 'Event Leaders':
             home_endpoint='staff_home'
-        elif role=='admin':
+        elif role == 'Administrators':
             home_endpoint='admin_home'
         else:
             home_endpoint = 'logout'
@@ -152,12 +152,18 @@ def signup():
     if 'loggedin' in session:
          return redirect(user_home_url())
     
-    if request.method == 'POST' and 'username' in request.form and 'email' in request.form and 'password' in request.form:
-        # Get the details submitted via the form on the signup page, and store
-        # the values in temporary local variables for ease of access.
+    if request.method == 'POST' and 'username' in request.form and 'email' in request.form and 'password' in request.form \
+       and 'full_name' in request.form and 'home_address' in request.form \
+       and 'contact_number' in request.form and 'environmental_interests' in request.form:
+        # Get the details submitted via the form on the signup page.
         username = request.form['username']
+        full_name = request.form['full_name']
         email = request.form['email']
         password = request.form['password']
+        home_address = request.form['home_address']
+        contact_number = request.form['contact_number']
+        environmental_interests = request.form['environmental_interests']
+        profile_image = request.form.get('profile_image', '')
 
         # We start by assuming that everything is okay. If we encounter any
         # errors during validation, we'll store an error message in one or more
@@ -165,6 +171,11 @@ def signup():
         username_error = None
         email_error = None
         password_error = None
+        full_name_error = None
+        home_address_error = None
+        contact_number_error = None
+        env_interest_error = None
+        profile_image_error = None
 
         # Check whether there's an account with this username in the database.
         with db.get_cursor() as cursor:
@@ -188,10 +199,8 @@ def signup():
         # Validate the new user's email address. Note: The regular expression
         # we use here isn't a perfect check for a valid address, but is
         # sufficient for this example.
-        if len(email) > 320:
-            # As above, the user should never see this error under normal
-            # conditions because we set a maximum input length in the template.
-            email_error = 'Your email address cannot exceed 320 characters.'
+        if len(email) > 100:
+            email_error = 'Your email address cannot exceed 100 characters.'
         elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
             email_error = 'Invalid email address.'
                 
@@ -208,17 +217,49 @@ def signup():
         # characters, the hash will always be the same length.
         if len(password) < 8:
             password_error = 'Please choose a longer password!'
-                
-        if (username_error or email_error or password_error):
-            # One or more errors were encountered, so send the user back to the
-            # signup page with their username and email address pre-populated.
-            # For security reasons, we never send back the password they chose.
+
+        # Full name validation
+        if not full_name or len(full_name) > 100:
+            full_name_error = 'Full name is required and cannot exceed 100 characters.'
+
+        # Home address validation
+        if not home_address or len(home_address) > 255:
+            home_address_error = 'Home address is required and must be under 255 characters.'
+
+        # Contact number validation (simple length check, digits/spaces/hyphens)
+        if not contact_number or len(contact_number) > 20 or not re.match(r'^[0-9\s\-+()]+$', contact_number):
+            contact_number_error = 'Contact number required (max 20 chars, digits/spaces/hyphens).'
+
+        # Environmental interests validation
+        if not environmental_interests or len(environmental_interests) > 255:
+            env_interest_error = 'Please describe at least one interest (max 255 chars).'
+
+        # Profile image path (optional) length check
+        if profile_image and len(profile_image) > 255:
+            profile_image_error = 'Profile image path must be under 255 characters.'
+
+        if (username_error or email_error or password_error or full_name_error or
+            home_address_error or contact_number_error or env_interest_error or
+            profile_image_error or full_name_error or
+            home_address_error or contact_number_error or env_interest_error or
+            profile_image_error):
+            # One or more validations failed; re-render form with previously
+            # supplied values (except password) and error messages.
             return render_template('signup.html',
                                    username=username,
+                                   full_name=full_name,
                                    email=email,
+                                   home_address=home_address,
+                                   contact_number=contact_number,
+                                   environmental_interests=environmental_interests,
                                    username_error=username_error,
+                                   full_name_error=full_name_error,
                                    email_error=email_error,
-                                   password_error=password_error)
+                                   password_error=password_error,
+                                   home_address_error=home_address_error,
+                                   contact_number_error=contact_number_error,
+                                   env_interest_error=env_interest_error,
+                                   profile_image_error=profile_image_error)
         else:
             # The new account details are valid. Hash the user's new password
             # and create their account in the database.
@@ -233,20 +274,28 @@ def signup():
             # possibility, and display a more useful message to the user.
             with db.get_cursor() as cursor:
                 cursor.execute('''
-                               INSERT INTO users (username, password_hash, email, role)
-                               VALUES (%s, %s, %s, %s);
+                               INSERT INTO users (
+                                   username, full_name, password_hash, email,
+                                   contact_number, home_address, profile_image,
+                                   enviromental_interests, role)
+                               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
                                ''',
-                               (username, password_hash, email, DEFAULT_USER_ROLE,))
+                               (username, full_name, password_hash, email,
+                                contact_number, home_address, profile_image,
+                                environmental_interests, DEFAULT_USER_ROLE,))
             
             # Now that registration is complete, send the user back to the
             # signup page. We set the `signup_successful` flag to display a
             # post-signup message.
             return render_template('signup.html', signup_successful=True)            
 
-    # This was a GET request, or an invalid POST (no username, email, and/or
-    # password). Render the signup page with no pre-populated form fields or
-    # error messages.
-    return render_template('signup.html')
+    # This was a GET request, or an invalid POST (missing required fields).
+    # Provide empty defaults for all template variables so Jinja doesn't raise
+    # an undefined error.
+    return render_template('signup.html',
+                           username='', full_name='', email='',
+                           home_address='', contact_number='',
+                           environmental_interests='', profile_image='')
 
 @app.route('/profile')
 def profile():

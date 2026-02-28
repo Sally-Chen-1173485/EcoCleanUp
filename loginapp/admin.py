@@ -14,7 +14,7 @@ def admin_home():
      """
      if 'loggedin' not in session:
           return redirect(url_for('login'))
-     elif session['role']!='admin':
+     elif session['role']!='Administrators':
           return render_template('access_denied.html'), 403
 
      return render_template('admin_home.html')
