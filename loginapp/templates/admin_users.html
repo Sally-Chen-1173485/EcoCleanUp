@@ -1,0 +1,61 @@
+{% extends 'userbase.html' %}
+
+{% block title %}User Management{% endblock %}
+
+{% set active_page = 'home' %}
+
+{% block content %}
+<section class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1>User Management</h1>
+            <form class="mb-4" method="get" action="{{ url_for('admin_users') }}">
+                <div class="input-group">
+                    <input type="text" name="q" class="form-control" placeholder="Search by username, name, email or role" value="{{ q }}">
+                    <button class="btn btn-primary" type="submit">Search</button>
+                </div>
+            </form>
+            {% if users %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Username</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td>{{ u.username }}</td>
+                            <td>{{ u.full_name }}</td>
+                            <td>{{ u.email }}</td>
+                            <td>{{ u.role }}</td>
+                            <td>{{ u.status }}</td>
+                            <td>
+                                <form method="post" action="{{ url_for('admin_update_status', user_id=u.user_id) }}" class="d-inline">
+                                    <select name="status" class="form-select form-select-sm d-inline w-auto">
+                                        <option value="active" {% if u.status=='active' %}selected{% endif %}>active</option>
+                                        <option value="nonactive" {% if u.status=='nonactive' %}selected{% endif %}>nonactive</option>
+                                        <option value="banned" {% if u.status=='banned' %}selected{% endif %}>banned</option>
+                                        <option value="suspended" {% if u.status=='suspended' %}selected{% endif %}>suspended</option>
+                                    </select>
+                                    <button class="btn btn-sm btn-secondary">Update</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">No users found.</div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

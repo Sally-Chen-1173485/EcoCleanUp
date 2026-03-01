@@ -1,0 +1,92 @@
+{% extends 'userbase.html' %}
+
+{% block title %}Volunteer Participation History{% endblock %}
+
+{% set active_page = 'home' %}
+
+{% block content %}
+<section class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1>Volunteer Participation History</h1>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">{{ volunteer.full_name }}</h5>
+                    <p class="card-text">
+                        <strong>Username:</strong> @{{ volunteer.username }}<br>
+                        <strong>Email:</strong> {{ volunteer.email }}<br>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            {% if events|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Event Name</th>
+                                <th>Date</th>
+                                <th>Location</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in events %}
+                            <tr>
+                                <td><strong>{{ record.event_name }}</strong></td>
+                                <td>{{ record.event_date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ record.location_ }}</td>
+                                <td>
+                                    <span class="badge {% if record.event_type == 'Beach Cleanup' %}bg-primary{% elif record.event_type == 'Park Cleanup' %}bg-success{% elif record.event_type == 'River Cleanup' %}bg-info{% elif record.event_type == 'Urban Cleanup' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                        {{ record.event_type }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if record.attendance %}
+                                        <span class="badge {% if record.attendance == 'Present' %}bg-success{% elif record.attendance == 'Late' %}bg-warning text-dark{% elif record.attendance == 'Excused' %}bg-info{% elif record.attendance == 'Absent' %}bg-danger{% elif record.attendance == 'No-Show' %}bg-dark{% else %}bg-secondary{% endif %}">
+                                            {{ record.attendance }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Pending</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% if record.rating %}
+                            <tr class="table-light">
+                                <td colspan="5">
+                                    <small>
+                                        <strong>Feedback:</strong>
+                                        {% for i in range(1, 6) %}
+                                            {% if i <= record.rating %}
+                                                <span class="text-warning">⭐</span>
+                                            {% else %}
+                                                <span class="text-muted">☆</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                        ({{ record.rating }}/5) - {{ record.comments }}
+                                    </small>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">No participation history available for this volunteer.</div>
+            {% endif %}
+            
+            <div class="text-center mt-4">
+                <a href="{{ url_for('staff_home') }}" class="btn btn-secondary">Back to Events</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

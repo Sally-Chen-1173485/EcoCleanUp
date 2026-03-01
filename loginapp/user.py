@@ -153,13 +153,14 @@ def signup():
          return redirect(user_home_url())
     
     if request.method == 'POST' and 'username' in request.form and 'email' in request.form and 'password' in request.form \
-       and 'full_name' in request.form and 'home_address' in request.form \
+       and 'password_confirm' in request.form and 'full_name' in request.form and 'home_address' in request.form \
        and 'contact_number' in request.form and 'environmental_interests' in request.form:
         # Get the details submitted via the form on the signup page.
         username = request.form['username']
         full_name = request.form['full_name']
         email = request.form['email']
         password = request.form['password']
+        password_confirm = request.form['password_confirm']
         home_address = request.form['home_address']
         contact_number = request.form['contact_number']
         environmental_interests = request.form['environmental_interests']
@@ -171,6 +172,7 @@ def signup():
         username_error = None
         email_error = None
         password_error = None
+        password_confirm_error = None
         full_name_error = None
         home_address_error = None
         contact_number_error = None
@@ -217,6 +219,8 @@ def signup():
         # characters, the hash will always be the same length.
         if len(password) < 8:
             password_error = 'Please choose a longer password!'
+        elif password != password_confirm:
+            password_confirm_error = 'Passwords do not match!'
 
         # Full name validation
         if not full_name or len(full_name) > 100:
@@ -238,9 +242,7 @@ def signup():
         if profile_image and len(profile_image) > 255:
             profile_image_error = 'Profile image path must be under 255 characters.'
 
-        if (username_error or email_error or password_error or full_name_error or
-            home_address_error or contact_number_error or env_interest_error or
-            profile_image_error or full_name_error or
+        if (username_error or email_error or password_error or password_confirm_error or full_name_error or
             home_address_error or contact_number_error or env_interest_error or
             profile_image_error):
             # One or more validations failed; re-render form with previously
@@ -256,6 +258,7 @@ def signup():
                                    full_name_error=full_name_error,
                                    email_error=email_error,
                                    password_error=password_error,
+                                   password_confirm_error=password_confirm_error,
                                    home_address_error=home_address_error,
                                    contact_number_error=contact_number_error,
                                    env_interest_error=env_interest_error,
@@ -295,27 +298,141 @@ def signup():
     return render_template('signup.html',
                            username='', full_name='', email='',
                            home_address='', contact_number='',
-                           environmental_interests='', profile_image='')
+                           environmental_interests='', profile_image='',
+                           password_confirm_error=None)
 
-@app.route('/profile')
+@app.route('/profile', methods=['GET', 'POST'])
 def profile():
     """User Profile page endpoint.
 
-    Methods:
-    - get: Renders the user profile page for the current user.
+    GET: Render a form containing the current user's profile details.
+    POST: Validate and save updates to the fields that users are allowed to
+    change (full name, home address, contact number, environmental
+    interests and profile image).  If validation fails we re-display the form
+    with appropriate error messages; on success a confirmation banner is shown.
 
-    If the user is not logged in, requests will redirect to the login page.
+    The user must be logged in to access this page; otherwise they're sent to
+    the login screen.
     """
     if 'loggedin' not in session:
-         return redirect(url_for('login'))
+        return redirect(url_for('login'))
 
-    # Retrieve user profile from the database.
+    # default error variables and success flag
+    full_name_error = None
+    home_address_error = None
+    contact_number_error = None
+    env_interest_error = None
+    profile_image_error = None
+    # password change errors
+    current_password_error = None
+    new_password_error = None
+    confirm_password_error = None
+    profile_updated = False
+
+    # fetch current profile data (we'll show these values in the form)
     with db.get_cursor() as cursor:
-        cursor.execute('SELECT username, email, role FROM users WHERE user_id = %s;',
-                       (session['user_id'],))
+        cursor.execute('''
+            SELECT username, email, role, full_name, home_address,
+                   contact_number, environmental_interests, profile_image,
+                   password_hash
+            FROM users
+            WHERE user_id = %s;
+        ''', (session['user_id'],))
         profile = cursor.fetchone()
 
-    return render_template('profile.html', profile=profile)
+    # handle form submission
+    if request.method == 'POST':
+        # grab submitted values (strip to avoid leading/trailing spaces)
+        full_name = request.form.get('full_name', '').strip()
+        home_address = request.form.get('home_address', '').strip()
+        contact_number = request.form.get('contact_number', '').strip()
+        environmental_interests = request.form.get('environmental_interests', '').strip()
+        profile_image = request.form.get('profile_image', '').strip()
+        # password change fields (may be blank if user isn't changing)
+        current_password = request.form.get('current_password', '').strip()
+        new_password = request.form.get('new_password', '').strip()
+        confirm_password = request.form.get('confirm_password', '').strip()
+
+        # validate inputs (same rules as signup)
+        if not full_name or len(full_name) > 100:
+            full_name_error = 'Full name is required and cannot exceed 100 characters.'
+        if not home_address or len(home_address) > 255:
+            home_address_error = 'Home address is required and must be under 255 characters.'
+        if (not contact_number or len(contact_number) > 20 or
+            not re.match(r'^[0-9\s\-+()]+$', contact_number)):
+            contact_number_error = 'Contact number required (max 20 chars, digits/spaces/hyphens).'
+        if not environmental_interests or len(environmental_interests) > 255:
+            env_interest_error = 'Please describe at least one interest (max 255 chars).'
+        if profile_image and len(profile_image) > 255:
+            profile_image_error = 'Profile image path must be under 255 characters.'
+
+        # handle password change if any field provided
+        if current_password or new_password or confirm_password:
+            # all three must be present
+            if not current_password:
+                current_password_error = 'Current password is required to change password.'
+            elif not flask_bcrypt.check_password_hash(profile['password_hash'], current_password):
+                current_password_error = 'Current password is incorrect.'
+            if not new_password:
+                new_password_error = 'New password cannot be blank.'
+            elif len(new_password) < 8:
+                new_password_error = 'New password must be at least 8 characters.'
+            if new_password and new_password != confirm_password:
+                confirm_password_error = 'Passwords do not match.'
+
+        # if there are no errors, write values back to the database
+        if not (full_name_error or home_address_error or contact_number_error or
+                env_interest_error or profile_image_error or
+                current_password_error or new_password_error or confirm_password_error):
+            with db.get_cursor() as cursor:
+                # update profile fields
+                cursor.execute('''
+                    UPDATE users
+                    SET full_name = %s,
+                        home_address = %s,
+                        contact_number = %s,
+                        environmental_interests = %s,
+                        profile_image = %s
+                    WHERE user_id = %s;
+                ''', (full_name, home_address, contact_number,
+                      environmental_interests, profile_image,
+                      session['user_id']))
+
+                # if password change requested, hash and update
+                if new_password:
+                    new_hash = flask_bcrypt.generate_password_hash(new_password).decode('utf-8')
+                    cursor.execute('''
+                        UPDATE users
+                        SET password_hash = %s
+                        WHERE user_id = %s;
+                    ''', (new_hash, session['user_id']))
+
+            profile_updated = True
+            # update profile dict so the template shows current values
+            profile['full_name'] = full_name
+            profile['home_address'] = home_address
+            profile['contact_number'] = contact_number
+            profile['environmental_interests'] = environmental_interests
+            profile['profile_image'] = profile_image
+        else:
+            # reflect submitted values on failure so user can correct them
+            profile['full_name'] = full_name
+            profile['home_address'] = home_address
+            profile['contact_number'] = contact_number
+            profile['environmental_interests'] = environmental_interests
+            profile['profile_image'] = profile_image
+
+    return render_template('profile.html',
+                           profile=profile,
+                           full_name_error=full_name_error,
+                           home_address_error=home_address_error,
+                           contact_number_error=contact_number_error,
+                           env_interest_error=env_interest_error,
+                           profile_image_error=profile_image_error,
+                           current_password_error=current_password_error,
+                           new_password_error=new_password_error,
+                           confirm_password_error=confirm_password_error,
+                           profile_updated=profile_updated)
 
 @app.route('/logout')
 def logout():

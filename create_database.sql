@@ -125,3 +125,15 @@ ALTER COLUMN username TYPE VARCHAR(50);
 ALTER TABLE users
 ALTER COLUMN email TYPE VARCHAR(100);
 
+CREATE TYPE status_setting AS ENUM ('active', 'nonactive', 'banned', 'suspended');
+ALTER TABLE users
+  ADD COLUMN status status_setting NOT NULL DEFAULT 'active';
+
+ALTER TABLE events
+  ADD COLUMN start_time TIME,
+  ADD COLUMN end_time TIME,
+  ADD COLUMN duration integer,
+  ADD COLUMN description_ text,
+  ADD COLUMN supplies TEXT,
+  ADD COLUMN safety_instructions TEXT, 
+  ADD COLUMN created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP;

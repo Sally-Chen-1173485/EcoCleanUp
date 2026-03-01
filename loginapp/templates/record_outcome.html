@@ -1,0 +1,85 @@
+{% extends 'userbase.html' %}
+
+{% block title %}Record Event Outcome{% endblock %}
+
+{% set active_page = 'home' %}
+
+{% block content %}
+<section class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <h1>Record Event Outcome</h1>
+            <p class="text-muted">{{ event.event_name }} - {{ event.event_date.strftime('%Y-%m-%d') }}</p>
+        </div>
+    </div>
+</section>
+
+<section class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            {% if errors.get('general') %}
+            <div class="alert alert-danger">{{ errors['general'] }}</div>
+            {% endif %}
+
+            <form method="post" class="needs-validation" novalidate>
+                <div class="mb-3">
+                    <div>
+                        <div class="form-text text-secondary font-monospace badge bg-info-subtle mt-3 mb-2">
+                            Number of Attendees is optional but must be a non-negative number.
+                        </div>
+                    </div>
+                    <label for="num_attendees" class="form-label">Number of Attendees</label>
+                    <input type="number" class="form-control" id="num_attendees" name="num_attendees" min="0" value="{{ outcome.num_attendees or '' }}">
+                </div>
+                <div class="mb-3">
+                    <div>
+                        <div class="form-text text-secondary font-monospace badge bg-info-subtle mt-3 mb-2">
+                            Bags Collected is optional but must be a non-negative number.
+                        </div>
+                    </div>
+                    <label for="bags_collected" class="form-label">Bags Collected</label>
+                    <input type="number" class="form-control" id="bags_collected" name="bags_collected" min="0" value="{{ outcome.bags_collected or '' }}">
+                </div>
+                <div class="mb-3">
+                    <div>
+                        <div class="form-text text-secondary font-monospace badge bg-info-subtle mt-3 mb-2">
+                            Recyclables Sorted (in lbs or kg) is optional but must be a non-negative number.
+                        </div>
+                    </div>
+                    <label for="recyclables_sorted" class="form-label">Recyclables Sorted (lbs/kg)</label>
+                    <input type="number" class="form-control" id="recyclables_sorted" name="recyclables_sorted" min="0" step="0.1" value="{{ outcome.recyclables_sorted or '' }}">
+                </div>
+                <div class="mb-3">
+                    <div>
+                        <div class="form-text text-secondary font-monospace badge bg-info-subtle mt-3 mb-2">
+                            Other Achievements is optional. Describe additional accomplishments here.
+                        </div>
+                    </div>
+                    <label for="other_achievements" class="form-label">Other Achievements (optional)</label>
+                    <textarea class="form-control" id="other_achievements" name="other_achievements" rows="3">{{ outcome.other_achievements or '' }}</textarea>
+                </div>
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary">Save Outcome</button>
+                    <a href="{{ url_for('event_detail', event_id=event.event_id) }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<script>
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })()
+</script>
+{% endblock %}

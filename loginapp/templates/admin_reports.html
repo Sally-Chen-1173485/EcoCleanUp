@@ -1,0 +1,61 @@
+{% extends 'userbase.html' %}
+
+{% block title %}Admin Reports{% endblock %}
+
+{% set active_page = 'home' %}
+
+{% block content %}
+<section class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1>Overall Reports</h1>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <ul>
+                        <li><strong>Total events:</strong> {{ total_events }}</li>
+                        <li><strong>Total volunteers:</strong> {{ total_volunteers }}</li>
+                        <li><strong>Total event leaders:</strong> {{ total_leaders }}</li>
+                        <li><strong>Total feedbacks:</strong> {{ total_feedbacks }}</li>
+                        <li><strong>Average rating:</strong> {{ '%.2f'|format(avg_rating) }}</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Attendance Counts</h3>
+            {% if attendance_counts %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead><tr><th>Status</th><th>Count</th></tr></thead>
+                    <tbody>
+                        {% for row in attendance_counts %}
+                        <tr><td>{{ row.attendance }}</td><td>{{ row.cnt }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No attendance data available.</p>
+            {% endif %}
+
+            <h3 class="mt-4">Volunteer Engagement</h3>
+            {% if engagement %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead><tr><th>Volunteer</th><th>Registrations</th></tr></thead>
+                    <tbody>
+                        {% for row in engagement %}
+                        <tr>
+                            <td>{{ row.full_name }} ({{ row.user_id }})</td>
+                            <td>{{ row.reg_count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No engagement data available.</p>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

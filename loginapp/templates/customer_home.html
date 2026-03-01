@@ -6,12 +6,130 @@
 {% set active_page = 'home' %}
 
 {% block content %}
-<section class="container py-5 text-center">
-    <div class="row justify-content-center">
+<section class="container py-5">
+    <div class="row justify-content-center text-center">
         <div class="col-lg-7">
-            <h1>Volunteers Home Page</h1>
-            <p class="lead text-muted">This is the page a volunteer sees when they first sign in. It should provide quick access to the information and features they're most likely to need when using the app.</p>
+            <h1>Volunteer Home</h1>
+            <p class="lead text-muted">Browse upcoming cleanup events, register to participate, and review past activities.</p>
         </div>
     </div>
+</section>
+
+<!-- Flash messages such as registration/feedback confirmation -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="container my-2">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- Filter form -->
+<section class="container mb-4">
+  <form class="row g-3" method="get">
+    <div class="col-md-2">
+      <label for="date_from" class="form-label">Start Date</label>
+      <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+    </div>
+    <div class="col-md-2">
+      <label for="date_to" class="form-label">End Date</label>
+      <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+    </div>
+    <div class="col-md-3">
+      <label for="location" class="form-label">Location</label>
+      <input type="text" class="form-control" id="location" name="location" value="{{ location }}" placeholder="Search location">
+    </div>
+    <div class="col-md-3">
+      <label for="event_type" class="form-label">Type</label>
+      <input type="text" class="form-control" id="event_type" name="event_type" value="{{ event_type }}" placeholder="e.g. Environmental">
+    </div>
+    <div class="col-md-2 align-self-end">
+      <button type="submit" class="btn btn-secondary w-100">Filter</button>
+    </div>
+  </form>
+</section>
+
+<!-- Upcoming events list -->
+<section class="container">
+  <h2>Upcoming Events</h2>
+  {% if upcoming_events and upcoming_events|length > 0 %}
+    <div class="table-responsive">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Name</th>
+          <th>Location</th>
+          <th>Type</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ev in upcoming_events %}
+        <tr>
+          <td>{{ ev.event_date.strftime('%Y-%m-%d') }}</td>
+          <td>{{ ev.event_name }}</td>
+          <td>{{ ev.location_ }}</td>
+          <td>{{ ev.event_type }}</td>
+          <td>
+            {% if ev.event_id in registered_ids %}
+              <span class="text-success">Registered</span>
+            {% else %}
+              <form method="post" class="d-inline">
+                <input type="hidden" name="event_id" value="{{ ev.event_id }}">
+                <button type="submit" name="register_event" class="btn btn-sm btn-primary">Register</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  {% else %}
+    <p class="text-muted">No upcoming events match your criteria.</p>
+  {% endif %}
+</section>
+
+<!-- Past events and feedback -->
+<section class="container mt-5">
+  <h2>Your Past Events</h2>
+  {% if past_events and past_events|length > 0 %}
+    {% for ev in past_events %}
+      <div class="card mb-3">
+        <div class="card-body">
+          <h5 class="card-title">{{ ev.event_name }} ({{ ev.event_date.strftime('%Y-%m-%d') }})</h5>
+          <p class="card-text"><strong>Location:</strong> {{ ev.location_ }}<br>
+             <strong>Type:</strong> {{ ev.event_type }}</p>
+          {% if ev.rating is not none %}
+            <div class="alert alert-info">You rated this event {{ ev.rating }} stars{% if ev.comments %} – "{{ ev.comments }}"{% endif %}.</div>
+          {% else %}
+            <form method="post">
+              <div class="mb-2">
+                <label for="rating_{{ ev.event_id }}" class="form-label">Rating</label>
+                <select id="rating_{{ ev.event_id }}" name="rating" class="form-select" required>
+                  <option value="">Choose...</option>
+                  {% for i in range(1,6) %}<option value="{{ i }}">{{ i }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="mb-2">
+                <label for="comments_{{ ev.event_id }}" class="form-label">Comments (optional)</label>
+                <textarea id="comments_{{ ev.event_id }}" name="comments" class="form-control" rows="2"></textarea>
+              </div>
+              <input type="hidden" name="event_id" value="{{ ev.event_id }}">
+              <button type="submit" name="feedback_event" class="btn btn-sm btn-success">Submit Feedback</button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p class="text-muted">You have no past registered events.</p>
+  {% endif %}
 </section>
 {% endblock %}

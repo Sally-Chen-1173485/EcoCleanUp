@@ -22,10 +22,10 @@
     </header>
 
     <!-- Main Content -->
-    <main>
+    <main class="py-5">
       <div class="container">
-        <div class="row vh-100 align-items-center justify-content-center">
-          <div class="col-md-auto col-lg-5 col-xl-4">
+        <div class="row align-items-center justify-content-center min-vh-100">
+          <div class="col-md-auto col-lg-5 col-xl-4 py-5">
               <div class="bg-primary text-white border border-bottom-0 rounded-top text-center">
                   <h1 class="p-3 m-0">Sign up</h1>
               </div>
@@ -53,14 +53,21 @@
                       <div class="invalid-feedback">{{ password_error }}</div>
                     </div>
                     <div class="mb-3">
+                      <label for="password_confirm" class="form-label">Confirm Password <span class="text-danger fw-bold">*</span></label>
+                      <input type="password" class="form-control{% if password_confirm_error %} is-invalid{% endif %}" id="password_confirm" name="password_confirm" placeholder="Re-enter your password..." required>
+                      <div class="invalid-feedback">{{ password_confirm_error }}</div>
+                    </div>
+                    <div class="mb-3">
                       <label for="home_address" class="form-label">Home Address <span class="text-danger fw-bold">*</span></label>
-                      <input type="text" class="form-control{% if home_address_error %} is-invalid{% endif %}" id="home_address" name="home_address" maxlength=255 value="{{ home_address }}" required>
-                      <div class="invalid-feedback">{{ home_address_error }}</div>
+                      <input type="text" class="form-control{% if home_address_error %} is-invalid{% endif %}" id="home_address" name="home_address" placeholder="e.g., 123 Main St, City" minlength="5" maxlength="255" value="{{ home_address }}" required>
+                      <div id="addressHelp" class="form-text">Please provide a complete address (minimum 5 characters).</div>
+                      <div class="invalid-feedback">{{ home_address_error or 'Please provide a valid home address.' }}</div>
                     </div>
                     <div class="mb-3">
                       <label for="contact_number" class="form-label">Contact Number <span class="text-danger fw-bold">*</span></label>
-                      <input type="text" class="form-control{% if contact_number_error %} is-invalid{% endif %}" id="contact_number" name="contact_number" maxlength=20 value="{{ contact_number }}" required>
-                      <div class="invalid-feedback">{{ contact_number_error }}</div>
+                      <input type="tel" class="form-control{% if contact_number_error %} is-invalid{% endif %}" id="contact_number" name="contact_number" placeholder="e.g., (123) 456-7890 or 123-456-7890" pattern="[0-9\s\-\(\)\+]+" minlength="10" maxlength="20" value="{{ contact_number }}" title="Please enter a valid phone number (digits, spaces, hyphens, parentheses, or + allowed)" required>
+                      <div id="phoneHelp" class="form-text">Accepted formats: (123) 456-7890, 123-456-7890, +1-234-567-8900, or similar.</div>
+                      <div class="invalid-feedback">{{ contact_number_error or 'Please provide a valid contact number.' }}</div>
                     </div>
                     <div class="mb-3">
                       <label for="environmental_interests" class="form-label">Environmental Interests <span class="text-danger fw-bold">*</span></label>
@@ -92,7 +99,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-secondary text-white text-center py-3 mt-5">
+    <footer class="bg-secondary text-white text-center py-3">
       <p class="mb-0">&copy; 2024 EcoCleanUp. Created by Sally Chen</p>
       <p class="mb-0">Student ID: 1173485</p>
     </footer>

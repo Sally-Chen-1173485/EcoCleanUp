@@ -1,0 +1,232 @@
+{% extends 'userbase.html' %}
+
+{% block title %}{% if mode=='create' %}Create Event{% elif mode=='edit' %}Edit Event{% else %}Event Details{% endif %}{% endblock %}
+
+{% set active_page = 'home' %}
+
+{% block content %}
+<section class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+            <h1>
+                {% if mode=='create' %}Create New Event{% elif mode=='edit' %}Edit Event{% else %}{{ event.event_name }}{% endif %}
+            </h1>
+            {% if mode=='detail' %}
+            <p class="text-muted">Organized by Event Leader</p>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<section class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            {% if mode in ['create','edit'] %}
+                {% if errors.get('general') %}
+                <div class="alert alert-danger">{{ errors['general'] }}</div>
+                {% endif %}
+                <form method="post" class="needs-validation" novalidate
+                      action="{% if mode=='create' %}{{ url_for('create_event') }}{% else %}{{ url_for('edit_event', event_id=event.event_id) }}{% endif %}">
+                    <div class="mb-3">
+                        <div class="form-text text-secondary font-monospace badge bg-info-subtle mt-3 mb-2">
+                            Event name should be concise (max 100 characters).
+                        </div>
+                        <label for="event_name" class="form-label">Event Name</label>
+                        <input type="text" class="form-control" id="event_name" name="event_name"
+                               maxlength="100" required
+                               value="{{ event.event_name if event and mode=='edit' else '' }}">
+                        {% if errors.get('event_name') %}
+                        <div class="text-danger small mt-1">{{ errors['event_name'] }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-text text-secondary font-monospace badge bg-info-subtle mt-3 mb-2">
+                            Provide the location (max 255 characters).
+                        </div>
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="location" name="location"
+                               maxlength="255" required
+                               value="{{ event.location_ if event and mode=='edit' else '' }}">
+                        {% if errors.get('location') %}
+                        <div class="text-danger small mt-1">{{ errors['location'] }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-text text-secondary font-monospace badge bg-info-subtle mt-3 mb-2">
+                            Choose a type (max 50 characters).
+                        </div>
+                        <label for="event_type" class="form-label">Event Type</label>
+                        <input type="text" class="form-control" id="event_type" name="event_type"
+                               maxlength="50" required
+                               value="{{ event.event_type if event and mode=='edit' else '' }}">
+                        {% if errors.get('event_type') %}
+                        <div class="text-danger small mt-1">{{ errors['event_type'] }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-text text-secondary font-monospace badge bg-info-subtle mt-3 mb-2">
+                            Select a date (cannot be in the past).
+                        </div>
+                        <label for="event_date" class="form-label">Event Date</label>
+                        <input type="date" class="form-control" id="event_date" name="event_date" required
+                               value="{{ event.event_date.strftime('%Y-%m-%d') if event and mode=='edit' else '' }}">
+                        {% if errors.get('event_date') %}
+                        <div class="text-danger small mt-1">{{ errors['event_date'] }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary">
+                            {% if mode=='create' %}Create Event{% else %}Save Changes{% endif %}
+                        </button>
+                        <a href="{{ url_for('staff_home') }}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            {% elif mode=='detail' %}
+                <!-- event detail content copied from previous template -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Event Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <p><strong>Date:</strong> {{ event.event_date.strftime('%Y-%m-%d') }}</p>
+                                <p><strong>Location:</strong> {{ event.location_ }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Type:</strong> <span class="badge {% if event.event_type == 'Beach Cleanup' %}bg-primary{% elif event.event_type == 'Park Cleanup' %}bg-success{% elif event.event_type == 'River Cleanup' %}bg-info{% elif event.event_type == 'Urban Cleanup' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ event.event_type }}</span></p>
+                                <p><strong>Status:</strong> <span class="badge {% if event.event_date >= now.date() %}bg-success{% else %}bg-secondary{% endif %}">{% if event.event_date >= now.date() %}Upcoming{% else %}Completed{% endif %}</span></p>
+                            </div>
+                        </div>
+                        {% if event.description_ %}
+                        <p><strong>Description:</strong></p>
+                        <p>{{ event.description_ }}</p>
+                        {% endif %}
+                        {% if event.supplies %}
+                        <p><strong>Supplies Provided:</strong></p>
+                        <p>{{ event.supplies }}</p>
+                        {% endif %}
+                        {% if event.safety_instructions %}
+                        <p><strong>Safety Instructions:</strong></p>
+                        <p>{{ event.safety_instructions }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="btn-group w-100 flex-wrap" role="group">
+                        <a href="{{ url_for('manage_attendance', event_id=event.event_id) }}" class="btn btn-outline-primary">Track Attendance</a>
+                        <a href="{{ url_for('record_outcome', event_id=event.event_id) }}" class="btn btn-outline-success">Record Outcome</a>
+                        <a href="{{ url_for('send_reminder', event_id=event.event_id) }}" class="btn btn-outline-info" onclick="return confirm('Send reminder to all registered volunteers?')">Send Reminder</a>
+                        <a href="{{ url_for('view_feedbacks', event_id=event.event_id) }}" class="btn btn-outline-secondary">View Feedbacks</a>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="btn-group w-100 flex-wrap" role="group">
+                        <a href="{{ url_for('edit_event', event_id=event.event_id) }}" class="btn btn-secondary">Edit Event</a>
+                        <form method="post" action="{{ url_for('cancel_event', event_id=event.event_id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to cancel this event? This cannot be undone.')">
+                            <button type="submit" class="btn btn-danger">Cancel Event</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Registered Volunteers ({{ volunteers|length }})</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if volunteers %}
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>Phone</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for volunteer in volunteers %}
+                                        <tr>
+                                            <td><strong>{{ volunteer.full_name }}</strong></td>
+                                            <td>{{ volunteer.email }}</td>
+                                            <td>{{ volunteer.contact_number or 'N/A' }}</td>
+                                            <td>
+                                                {% if volunteer.attendance %}
+                                                    <span class="badge {% if volunteer.attendance == 'Present' %}bg-success{% elif volunteer.attendance == 'Late' %}bg-warning text-dark{% elif volunteer.attendance == 'Excused' %}bg-info{% elif volunteer.attendance == 'Absent' %}bg-danger{% elif volunteer.attendance == 'No-Show' %}bg-dark{% else %}bg-secondary{% endif %}">
+                                                        {{ volunteer.attendance }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Pending</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{{ url_for('volunteer_history', volunteer_id=volunteer.volunteer_id) }}" class="btn btn-sm btn-outline-info" title="View history">History</a>
+                                                <form method="post" action="{{ url_for('remove_volunteer', event_id=event.event_id, volunteer_id=volunteer.volunteer_id) }}" style="display: inline;" onsubmit="return confirm('Remove this volunteer from the event?')">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove volunteer">Remove</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="text-muted">No volunteers registered yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if outcome %}
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Event Outcomes</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Attendees:</strong> {{ outcome.num_attendees or 'Not recorded' }}</p>
+                                <p><strong>Bags Collected:</strong> {{ outcome.bags_collected or 'Not recorded' }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Recyclables Sorted:</strong> {{ outcome.recyclables_sorted or 'Not recorded' }} lbs/kg</p>
+                            </div>
+                        </div>
+                        {% if outcome.other_achievements %}
+                        <p><strong>Other Achievements:</strong></p>
+                        <p>{{ outcome.other_achievements }}</p>
+                        {% endif %}
+                        <p class="small text-muted">Recorded on {{ outcome.recorded_at.strftime('%Y-%m-%d %H:%M') if outcome.recorded_at else 'Not set' }}</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="text-center">
+                    <a href="{{ url_for('staff_home') }}" class="btn btn-secondary">Back to Events</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+{% if mode in ['create','edit'] %}
+<script>
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })()
+</script>
+{% endif %}
+{% endblock %}

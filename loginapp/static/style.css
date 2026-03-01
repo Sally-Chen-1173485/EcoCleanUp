@@ -5,11 +5,25 @@
     --theme-light-bg: #f5f5f5;
 }
 
-/* color and background helpers */
+/* sticky footer layout */
+html, body {
+    height: 100%;
+}
+
 body {
+    display: flex;
+    flex-direction: column;
     background-color: var(--theme-darker);
     color: var(--theme-text);
     font-size: clamp(14px, 2vw, 16px);
+}
+
+main {
+    flex: 1;
+}
+
+footer {
+    margin-top: auto;
 }
 
 /* navbar/footer */
@@ -27,13 +41,24 @@ footer {
 }
 
 /* links */
-a,
-.nav-link {
-    color: var(--theme-text) !important;
+a {
+    color: #0056b3 !important;
 }
-a:hover,
+
+a:hover {
+    color: #003d82 !important;
+}
+
+.nav-link {
+    color: #ffffff !important;
+}
+
 .nav-link:hover {
-    color: #cccccc !important;
+    color: #e0e0e0 !important;
+}
+
+.navbar-brand {
+    color: #ffffff !important;
 }
 
 /* re-style white backgrounds so they aren’t too bright */

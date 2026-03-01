@@ -10,13 +10,23 @@
     <div class="row justify-content-center text-center">
         <div class="col-lg-7">
             <h1>{{ profile.role.title() }} Profile</h1>
-            <p class="lead text-muted">Here's everything we know about you.</p>
+            <p class="lead text-muted">Manage your personal information below.</p>
         </div>
     </div>
 </section>
-    
+
 <section class="container">
-    <form>
+    {% if profile_updated %}
+    <div class="row justify-content-center">
+        <div class="col-lg-5">
+            <div class="alert alert-success text-center" role="alert">
+                Your profile has been updated successfully.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('profile') }}" class="needs-validation" novalidate>
         <div class="row justify-content-center">
             <div class="col-lg-3 mb-3">
                 <label for="username" class="form-label">Username</label>
@@ -27,11 +37,103 @@
                 <input type="text" class="form-control" id="useremail" name="useremail" value="{{ profile.email }}" disabled>
             </div>
         </div>
-        <div class="my-3 row justify-content-center">
+        <div class="row justify-content-center">
+            <div class="col-lg-6 mb-3">
+                <div>
+                    <div class="form-text text-secondary font-monospace badge bg-info-subtle mt-3 mb-2">
+                        Full Name is required and must not exceed 100 characters.
+                    </div>
+                </div>
+                <label for="full_name" class="form-label">Full Name <span class="text-danger fw-bold">*</span></label>
+                <input type="text" class="form-control{% if full_name_error %} is-invalid{% endif %}" id="full_name" name="full_name" maxlength="100" value="{{ profile.full_name or '' }}" required>
+                <div class="invalid-feedback">{{ full_name_error or 'Please provide your full name (max 100 characters).' }}</div>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-6 mb-3">
+                <div>
+                    <div class="form-text text-secondary font-monospace badge bg-info-subtle mt-3 mb-2">
+                        Home address is required (max 255 characters).
+                    </div>
+                </div>
+                <label for="home_address" class="form-label">Home Address <span class="text-danger fw-bold">*</span></label>
+                <input type="text" class="form-control{% if home_address_error %} is-invalid{% endif %}" id="home_address" name="home_address" placeholder="e.g., 123 Main St, City" maxlength="255" value="{{ profile.home_address or '' }}" required>
+                <div id="addressHelp" class="form-text">Please provide a complete address (max 255 characters).</div>
+                <div class="invalid-feedback">{{ home_address_error or 'Please provide your home address.' }}</div>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-6 mb-3">
+                <div>
+                    <div class="form-text text-secondary font-monospace badge bg-info-subtle mt-3 mb-2">
+                        Contact number is required (10–20 digits; spaces, hyphens, parentheses, or + allowed).
+                    </div>
+                </div>
+                <label for="contact_number" class="form-label">Contact Number <span class="text-danger fw-bold">*</span></label>
+                <input type="tel" class="form-control{% if contact_number_error %} is-invalid{% endif %}" id="contact_number" name="contact_number" placeholder="e.g., (123) 456-7890" pattern="[0-9\s\-\(\)\+]+" minlength="10" maxlength="20" value="{{ profile.contact_number or '' }}" title="Digits, spaces, hyphens, parentheses or +" required>
+                <div id="phoneHelp" class="form-text">Accepted formats: (123) 456‑7890, 123‑456‑7890, +1‑234‑567‑8900.</div>
+                <div class="invalid-feedback">{{ contact_number_error or 'Please provide a contact number.' }}</div>
+                <div class="valid-feedback">Valid phone number.</div>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-6 mb-3">
+                <div>
+                    <div class="form-text text-secondary font-monospace badge bg-info-subtle mt-3 mb-2">
+                        Environmental interests are required (max 255 characters).
+                    </div>
+                </div>
+                <label for="environmental_interests" class="form-label">Environmental Interests <span class="text-danger fw-bold">*</span></label>
+                <input type="text" class="form-control{% if env_interest_error %} is-invalid{% endif %}" id="environmental_interests" name="environmental_interests" maxlength="255" value="{{ profile.environmental_interests or '' }}" required>
+                <div class="invalid-feedback">{{ env_interest_error or 'Please list your environmental interests.' }}</div>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-6 mb-3">
+                <div>
+                    <div class="form-text text-secondary font-monospace badge bg-info-subtle mt-3 mb-2">
+                        Profile image URL is optional but must be valid if provided.
+                    </div>
+                </div>
+                <label for="profile_image" class="form-label">Profile Image URL (optional)</label>
+                <input type="text" class="form-control{% if profile_image_error %} is-invalid{% endif %}" id="profile_image" name="profile_image" maxlength="255" value="{{ profile.profile_image or '' }}">
+                <div class="invalid-feedback">{{ profile_image_error }}</div>
+            </div>
+        </div>
+        <hr>
+        <div class="row justify-content-center mb-3">
             <div class="col-lg-6">
-                <p>You could make the fields on this form editable, and add buttons to let users save or cancel any changes they make.</p>
-                <hr />
-                <p><small><em>Hint: Remember to think about validation and error handling: for example, what happens if users enter an invalid email address or a username that's already taken?</em></small></p>
+                <h4>Change Password</h4>
+                <p class="form-text text-secondary font-monospace badge bg-info-subtle mt-1 mb-2">
+                    Leave these fields blank if you do not wish to change your password. 
+                </p>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-6 mb-3">
+                <label for="current_password" class="form-label">Current Password</label>
+                <input type="password" class="form-control{% if current_password_error %} is-invalid{% endif %}" id="current_password" name="current_password" minlength="8">
+                <div class="invalid-feedback">{{ current_password_error }}</div>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-6 mb-3">
+                <label for="new_password" class="form-label">New Password</label>
+                <input type="password" class="form-control{% if new_password_error %} is-invalid{% endif %}" id="new_password" name="new_password" minlength="8">
+                <div id="passwordHelp" class="form-text">At least 8 characters.</div>
+                <div class="invalid-feedback">{{ new_password_error }}</div>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-6 mb-3">
+                <label for="confirm_password" class="form-label">Confirm New Password</label>
+                <input type="password" class="form-control{% if confirm_password_error %} is-invalid{% endif %}" id="confirm_password" name="confirm_password" minlength="8">
+                <div class="invalid-feedback">{{ confirm_password_error }}</div>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-6 text-center">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
             </div>
         </div>
     </form>
