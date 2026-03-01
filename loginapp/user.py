@@ -277,7 +277,7 @@ def signup():
                                INSERT INTO users (
                                    username, full_name, password_hash, email,
                                    contact_number, home_address, profile_image,
-                                   enviromental_interests, role)
+                                   environmental_interests, role)
                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
                                ''',
                                (username, full_name, password_hash, email,

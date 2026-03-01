@@ -1,14 +1,15 @@
 :root {
     --theme-deepblue: #001f3f;
-    --theme-darker: #000d1a;
-    --theme-text: #ffffff;
-    --theme-light-bg: #111a2b;
+    --theme-darker: #ffffff;
+    --theme-text: #333333;
+    --theme-light-bg: #f5f5f5;
 }
 
 /* color and background helpers */
 body {
     background-color: var(--theme-darker);
     color: var(--theme-text);
+    font-size: clamp(14px, 2vw, 16px);
 }
 
 /* navbar/footer */
@@ -43,13 +44,58 @@ a:hover,
 
 /* hero section used on public home page */
 .hero-section {
-    background: linear-gradient(135deg, #001f3f 0%, #000d1a 100%);
+    background: linear-gradient(135deg, #001f3f 0%, #002d5c 100%);
     color: white;
-    padding: 80px 20px;
+    padding: clamp(40px, 10vw, 80px) clamp(20px, 5vw, 20px);
     text-align: center;
 }
 
+.hero-section h1 {
+    font-size: clamp(24px, 6vw, 48px);
+    margin-bottom: clamp(10px, 3vw, 20px);
+}
+
+.hero-section p {
+    font-size: clamp(16px, 4vw, 20px);
+    margin-bottom: clamp(15px, 5vw, 30px);
+}
+
 .btn-action {
-    margin: 0 10px;
+    margin: clamp(5px, 2vw, 10px);
     font-weight: bold;
+    font-size: clamp(14px, 3vw, 16px);
+}
+
+/* responsive containers */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
+    .form-label {
+        font-size: clamp(14px, 3vw, 16px);
+    }
+    
+    .btn {
+        padding: clamp(8px, 2vw, 10px) clamp(12px, 3vw, 16px);
+        font-size: clamp(14px, 3vw, 16px);
+    }
+}
+
+@media (max-width: 576px) {
+    body {
+        font-size: 14px;
+    }
+    
+    h1 {
+        font-size: clamp(20px, 5vw, 28px);
+    }
+    
+    h2 {
+        font-size: clamp(18px, 4vw, 24px);
+    }
+    
+    p {
+        font-size: clamp(13px, 3vw, 16px);
+    }
 }
