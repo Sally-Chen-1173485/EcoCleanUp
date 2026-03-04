@@ -1,0 +1,14 @@
+{% extends 'userbase.html' %}
+
+{% block title %}Image Upload{% endblock %}
+
+{# Set the active page to be highlighted in the navigation bar. #}
+{% set active_page = 'image_upload' %}
+
+{% block content %}
+
+<form action="/upload-profile" method="POST" enctype="multipart/form-data">
+    <label for="profile_image">Choose a profile image:</label>
+    <input type="file" name="profile_image" id="profile_image" accept="image/*" required>
+    <button type="submit">Upload</button>
+</form>

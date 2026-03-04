@@ -47,6 +47,11 @@
                 <label for="full_name" class="form-label">Full Name <span class="text-danger fw-bold">*</span></label>
                 <input type="text" class="form-control{% if full_name_error %} is-invalid{% endif %}" id="full_name" name="full_name" maxlength="100" value="{{ profile.full_name or '' }}" required>
                 <div class="invalid-feedback">{{ full_name_error or 'Please provide your full name (max 100 characters).' }}</div>
+                <div class="form-group">
+                  <label for="profile_picture">Upload Profile Picture</label>
+                  <input type="file" class="form-control" id="profile_picture" name="profile_picture" accept="image/*" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
             </div>
         </div>
         <div class="row justify-content-center">
@@ -119,9 +124,9 @@
         <div class="row justify-content-center">
             <div class="col-lg-6 mb-3">
                 <label for="new_password" class="form-label">New Password</label>
-                <input type="password" class="form-control{% if new_password_error %} is-invalid{% endif %}" id="new_password" name="new_password" minlength="8">
-                <div id="passwordHelp" class="form-text">At least 8 characters.</div>
-                <div class="invalid-feedback">{{ new_password_error }}</div>
+                <input type="password" class="form-control{% if new_password_error %} is-invalid{% endif %}" id="new_password" name="new_password" minlength="8" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}" title="At least 8 characters with uppercase, lowercase, number, and special character.">
+                <div id="passwordHelp" class="form-text">At least 8 characters with uppercase, lowercase, number, and special character.</div>
+                <div class="invalid-feedback">{{ new_password_error or 'Use at least 8 characters with uppercase, lowercase, number, and special character.' }}</div>
             </div>
         </div>
         <div class="row justify-content-center">

@@ -1,0 +1,4 @@
+{
+    "inlineChat.notebookAgent": true,
+    "github.copilot.chat.summarizeAgentConversationHistory.enabled": true
+}

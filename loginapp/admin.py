@@ -2,7 +2,7 @@ from loginapp import app
 from loginapp import db
 from flask import redirect, render_template, session, url_for, request, flash
 
-# reuse staff views for event management
+# reuse Event Leader's views for event management
 from loginapp.staff import (
     staff_home as leader_home,
     event_detail as leader_event_detail,

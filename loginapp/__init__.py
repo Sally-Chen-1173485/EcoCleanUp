@@ -15,7 +15,7 @@ app = Flask(__name__)
 # For the purpose of your assignments, you DON'T need to use any of those more
 # advanced and secure methods: it's fine to store your secret key in your
 # source code like we do here.
-app.secret_key = 'Example Secret Key (CHANGE THIS TO YOUR OWN SECRET KEY!)'
+app.secret_key = 'Secret Key for 639 Assignment 1'
 
 # Set up database connection.
 from loginapp import connect

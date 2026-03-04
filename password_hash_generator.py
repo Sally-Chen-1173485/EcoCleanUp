@@ -32,11 +32,42 @@ flask_bcrypt = Bcrypt(app)
 
 # Replace the example UserAccount objects below with the initial user accounts
 # for your own web app. You can add as many as you need to the list.
-users = [UserAccount('user1', 'customer1pass'), 
-         UserAccount('user2', 'customer2pass'),
+users = [UserAccount('customer1', 'customer1pass'), 
+         UserAccount('customer2', 'customer2pass'),
          UserAccount('staff1', 'staff1pass'),
          UserAccount('staff2', 'staff2pass'),
-         UserAccount('admin1', 'admin1pass')]
+         UserAccount('admin1', 'admin1pass'),
+         UserAccount('admin2', 'admin2pass'),
+         UserAccount('alice_williams', 'alice_williams_pass'),
+         UserAccount('bob_smith', 'bob_smith_pass'),
+         UserAccount('carol_jones', 'carol_jones_pass'),
+         UserAccount('david_brown', 'david_brown_pass'),
+         UserAccount('emma_davis', 'emma_davis_pass'),
+         UserAccount('frank_martin', 'frank_martin_pass'),   
+         UserAccount('grace_clark', 'grace_clark_pass'),
+         UserAccount('hannah_lee', 'hannah_lee_pass'),     
+         UserAccount('ian_king', 'ian_king_pass'),
+         UserAccount('jack_moore', 'jack_moore_pass'),
+         UserAccount('karen_wilson', 'karen_wilson_pass'),
+         UserAccount('lucas_taylor', 'lucas_taylor_pass'),
+         UserAccount('mona_lee', 'mona_lee_pass'),    
+         UserAccount('noah_sanders', 'noah_sanders_pass'),
+         UserAccount('olivia_smith', 'olivia_smith_pass'),
+         UserAccount('paul_baker', 'paul_baker_pass'),
+         UserAccount('queen_carter', 'queen_carter_pass'),
+         
+         UserAccount('yolanda_garcia', 'yolanda_garcia_pass'),
+         UserAccount('zachary_lee', 'zachary_lee_pass'),
+         UserAccount('april_walker', 'april_walker_pass'),
+         UserAccount('brandon_hall', 'brandon_hall_pass'),
+         UserAccount('cynthia_king', 'cynthia_king_pass'),
+         UserAccount('derek_wright', 'derek_wright_pass'),
+         UserAccount('eric_lopez', 'eric_lopez_pass'),
+         UserAccount('fiona_green', 'fiona_green_pass'),
+         UserAccount('george_adams', 'george_adams_pass'),
+         UserAccount('hannah_baker', 'hannah_baker_pass'),
+         UserAccount('ian_nelson', 'ian_nelson_pass')]
+
 
 print('Username | Password | Hash | Password Matches Hash')
 

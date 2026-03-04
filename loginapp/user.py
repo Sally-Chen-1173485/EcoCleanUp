@@ -3,13 +3,43 @@ from loginapp import db
 from flask import redirect, render_template, request, session, url_for
 from flask_bcrypt import Bcrypt
 import re
+import os
+import uuid
+from werkzeug.utils import secure_filename
 
 # Create an instance of the Bcrypt class, which we'll be using to hash user
 # passwords during login and registration.
 flask_bcrypt = Bcrypt(app)
 
 # Default role assigned to new users upon registration.
-DEFAULT_USER_ROLE = 'Volunteers'
+default_user_role = 'Volunteers'
+default_status= 'active'
+
+ALLOWED_PROFILE_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+def upload_profile_image(file):
+    """Save an uploaded profile image and return (db_path, error_message).
+
+    - db_path is a relative path such as "uploads/abc123.jpg" for DB storage.
+    - error_message is None on success, or a user-facing validation message.
+    """
+    if file is None or file.filename == '':
+        return None, None
+
+    filename = secure_filename(file.filename)
+    if '.' not in filename:
+        return None, 'Invalid file type. Please upload PNG, JPG, JPEG, GIF, or WEBP.'
+
+    extension = filename.rsplit('.', 1)[1].lower()
+    if extension not in ALLOWED_PROFILE_IMAGE_EXTENSIONS:
+        return None, 'Invalid file type. Please upload PNG, JPG, JPEG, GIF, or WEBP.'
+
+    unique_filename = f"{uuid.uuid4().hex}.{extension}"
+    upload_folder = os.path.join(app.root_path, 'static', 'uploads')
+    os.makedirs(upload_folder, exist_ok=True)
+    file.save(os.path.join(upload_folder, unique_filename))
+
+    return f'uploads/{unique_filename}', None
 
 def user_home_url():
     """Generates a URL to the homepage for the currently logged-in user.
@@ -164,7 +194,13 @@ def signup():
         home_address = request.form['home_address']
         contact_number = request.form['contact_number']
         environmental_interests = request.form['environmental_interests']
-        profile_image = request.form.get('profile_image', '')
+        uploaded_profile_image = request.files.get('profile_image')
+        profile_image, profile_image_upload_error = upload_profile_image(uploaded_profile_image)
+
+           
+
+         
+    
 
         # We start by assuming that everything is okay. If we encounter any
         # errors during validation, we'll store an error message in one or more
@@ -177,7 +213,7 @@ def signup():
         home_address_error = None
         contact_number_error = None
         env_interest_error = None
-        profile_image_error = None
+        profile_image_error = profile_image_upload_error
 
         # Check whether there's an account with this username in the database.
         with db.get_cursor() as cursor:
@@ -280,12 +316,12 @@ def signup():
                                INSERT INTO users (
                                    username, full_name, password_hash, email,
                                    contact_number, home_address, profile_image,
-                                   environmental_interests, role)
-                               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
+                                   environmental_interests, role, status)
+                               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
                                ''',
                                (username, full_name, password_hash, email,
                                 contact_number, home_address, profile_image,
-                                environmental_interests, DEFAULT_USER_ROLE,))
+                                environmental_interests, default_user_role, default_status))
             
             # Now that registration is complete, send the user back to the
             # signup page. We set the `signup_successful` flag to display a

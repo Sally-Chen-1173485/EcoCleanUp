@@ -1,32 +1,32 @@
 INSERT INTO users (username, password_hash, email, role)
 VALUES
-	('customer1', '$2b$12$3W3b9AnL6umkIBm6THGHB.yId0/GuR/Gi7R8ZevTwR0xi3o8rrvZa', 'customer1@example.com', 'customer'),
-	('customer2', '$2b$12$6KPIL1c77kZpDXzDDRuJV.ielxGNDUIJPkxl0K5JdQoZTMrcIMBym', 'customer2@example.com', 'customer'),
-	('staff1', '$2b$12$OKt92QtCTJmhr4wqRMYZH.6lOSBUh0oGKcvaNerR2fQe6L7.ViQ0O', 'staff1@example.com', 'staff'),
-	('staff2', '$2b$12$mT8QI2wKBvpoOFZsRwaLkeuS9FS4vc6sX.GJNnNMA1EKmypk6UYGa', 'staff2@example.com', 'staff'),
-	('admin1', '$2b$12$.jUTmK8lb/4O8O3oFuHyeerUl9qs1c.slhGzpYDMJqxGnnToGPuMO', 'admin1@example.com', 'admin');
+	('customer1', '$2b$12$3MKcEpWwiXM7ocpSXQOYeeBqnrOFHYZQti1sebnXP.l9CMLaDmVTS', 'customer1@example.com', 'customer'),
+	('customer2', '$2b$12$FbZkr80qHYTzLCjFP3//4.R7.iCQyHRW1zbwde8xd36bN4KqbuLvu', 'customer2@example.com', 'customer'),
+	('staff1', '$2b$12$2yha6il4/AHIuw3fe9F6oet8tlcX3kvOEtMHqzqSaGHZplqS6UnRO', 'staff1@example.com', 'staff'),
+	('staff2', '$2b$12$lMLo.6Ka5oxiEfKiUzvkR.w2PVBGEXSU2Dx90RfXE7u.EMXd5gmGK', 'staff2@example.com', 'staff'),
+	('admin1', '$2b$12$7xzrCLlkpCq4ybjdrVJIM.H56.cnc/BJb87p4aA4usVZBpdMgdm4G', 'admin1@example.com', 'admin');
 
 
 	-- Insert users with real names and hashed passwords-created by AI.
 INSERT INTO users (username, password_hash, email, role) 
 VALUES
-    ('alice_williams', '$2b$12$3W3b9AnL6umkIBm6THGHB.yId0/GuR/Gi7R8ZevTwR0xi3o8rrvZa', 'alice.williams@example.com', 'customer'),
-    ('bob_smith', '$2b$12$6KPIL1c77kZpDXzDDRuJV.ielxGNDUIJPkxl0K5JdQoZTMrcIMBym', 'bob.smith@example.com', 'customer'),
-    ('carol_jones', '$2b$12$OKt92QtCTJmhr4wqRMYZH.6lOSBUh0oGKcvaNerR2fQe6L7.ViQ0O', 'carol.jones@example.com', 'customer'),
-    ('david_brown', '$2b$12$mT8QI2wKBvpoOFZsRwaLkeuS9FS4vc6sX.GJNnNMA1EKmypk6UYGa', 'david.brown@example.com', 'customer'),
-    ('emma_davis', '$2b$12$.jUTmK8lb/4O8O3oFuHyeerUl9qs1c.slhGzpYDMJqxGnnToGPuMO', 'emma.davis@example.com', 'customer'),
-    ('frank_martin', '$2b$12$4gXtIsvO4vBzCBaIH5dqkqOXPSR0LnTEXJxjRz3yKHZYPX7eFOm8s', 'frank.martin@example.com', 'customer'),
-    ('grace_clark', '$2b$12$L8cR6ZmcOwzIhDhVmSeRbUGAOTzSbF1VRhUp68zN8pTOHgVlw0CBG', 'grace.clark@example.com', 'customer'),
-    ('hannah_lee', '$2b$12$X7dd57dgght5t69gggm0yObvn6T7.BH7Iuvbpt7ANv7fRePhE3uSK', 'hannah.lee@example.com', 'customer'),
-    ('ian_king', '$2b$12$TyKmJj0sdvlYNOjVhXJgCXYq3VZPBoByB1UQHg31m0uGhT2I0qq3q', 'ian.king@example.com', 'customer'),
-    ('jack_moore', '$2b$12$Yj5VQna.5l0DtYPR7MjgW8X5hDpNK6tpoQ9Te0R0GubnNpmCZhbyC', 'jack.moore@example.com', 'customer'),
-    ('karen_wilson', '$2b$12$MB7TfFzKftXtdJUqT0MzD9R8xHa9vRzRzmU8u7Z1OZt1l6ERu2bQy', 'karen.wilson@example.com', 'customer'),
-    ('lucas_taylor', '$2b$12$DJ9.QcsVhptAd5tw78dlFq6ro/NY3OQwGtwTyF0QTGNNmL47bsccK', 'lucas.taylor@example.com', 'staff'),
-    ('mona_lee', '$2b$12$AZPlnXt3VwA0FCmyi7g2p7SvkOgxuwb91StJlxOsmHXt72FESX4qa', 'mona.lee@example.com', 'staff'),
-    ('noah_sanders', '$2b$12$PQCp5tqX0RpmwPC1HqbgMw49LlwHrxVsHKc02BZZlXiQy5sl8fi5g', 'noah.sanders@example.com', 'staff'),
-    ('olivia_smith', '$2b$12$cb6.lW0gG5z.m9gFfb.mwVAsD1V7jYZ9DQ8m7jAHHKnA1ZRTZ2R9S', 'olivia.smith@example.com', 'staff'),
-    ('paul_baker', '$2b$12$y2iTmk6PZmG2aH8Xkgf1tT8J2H1sAk7Zj0pewfeJbwE94Uk6P7eHC', 'paul.baker@example.com', 'admin'),
-    ('queen_carter', '$2b$12$7DGRRDCrcmWVzIHoLgB3Oeu1mrRtdJguyg6djm8tZgS8Vsf4ZZ5Wa', 'queen.carter@example.com', 'admin');
+    ('alice_williams', '$2b$12$ikKJW9sJe7uqaJZ8FOhCv.dutXDHZVUXxvJnYrTviM6ZEXzwiSy4K', 'alice.williams@example.com', 'customer'),
+    ('bob_smith', '$2b$12$I4i1Y3DUjZyu98pIewXL0eAdNgJaz77TsjJgFJ.zCpbyLGA83X8z2', 'bob.smith@example.com', 'customer'),
+    ('carol_jones', '$2b$12$wR2NW9Q/5nyBKruovv14/eYWWlfPRtAwutSzRtfyOtFk9MVxozNgy', 'carol.jones@example.com', 'customer'),
+    ('david_brown', '$2b$12$ISpm51UEc2mRrrKDT7iUueJ9EClI2dw4/401r35h4Vsa/VfZFEdda', 'david.brown@example.com', 'customer'),
+    ('emma_davis', '$2b$12$e7uSOR29FP7mdvRSTjg.gekUqO4lVIKZD30swUzWVzHs/Gb49zqBG', 'emma.davis@example.com', 'customer'),
+    ('frank_martin', '$2b$12$CdFzhYf1.vTx12RgM3cOseEEaAULfF.OGRxScMF6OHAc0kPTeENmS', 'frank.martin@example.com', 'customer'),
+    ('grace_clark', '$2b$12$uid8HO1CyQoncVqUapOB9e2/lOIKfesRin0BRNNhEdtR/tJzOlv9W', 'grace.clark@example.com', 'customer'),
+    ('hannah_lee', '$2b$12$5RS4UvBNEzc6CZndWcefkeR3euTmY6KrOKxs7RLeavS9LnW6IPkCq', 'hannah.lee@example.com', 'customer'),
+    ('ian_king', '$2b$12$QdXb9ey4Oadqbup1H8onHuyAYhCYVGq1wSZiHVxQw73XYXG7.puD.', 'ian.king@example.com', 'customer'),
+    ('jack_moore', '$2b$12$haQu8l/pnQfElXVVIb4nnuBILa0Cg9/VZpaLO76kYcd3KhL2DQvRi', 'jack.moore@example.com', 'customer'),
+    ('karen_wilson', '$2b$12$Fqe.aEVFCK1Ypib9kKqADeMUbxl03psfRVXOc7jL1TUl9FIFQJ8DK', 'karen.wilson@example.com', 'customer'),
+    ('lucas_taylor', '$2b$12$bi6SmBAMk70RZ.qPiannQO1NnnP.k1j2afOSRntHRCeEhYi5cmU9S', 'lucas.taylor@example.com', 'staff'),
+    ('mona_lee', '$2b$12$AeQcAwngIiI22xkKpLTZPeOs6ESjN1URGOy2mCrzootabbYdS/AZK', 'mona.lee@example.com', 'staff'),
+    ('noah_sanders', '$2b$12$.upL93KmS8OclWq9ZWYM0eo1UrIQAzJHpf1WvL1zSQJyd1nrdG6Sq', 'noah.sanders@example.com', 'staff'),
+    ('olivia_smith', '$2b$12$ER35iZrcW/AYUyIFE81ThOP6wISsR.B2pw2SCmx5QZ1F1TbYm0Qsq', 'olivia.smith@example.com', 'staff'),
+    ('paul_baker', '$2b$12$eYDVU8u2/DRm75htoexH1eT.N3cdkVOyIe1oBJUIbrSQay6mSTbPC', 'paul.baker@example.com', 'admin'),
+    ('queen_carter', '$2b$12$1VbsW0./0kZF3U3gACf/u.5HxGJ3Ow1rEnT9kuPSkt63OYBpRLpi6', 'queen.carter@example.com', 'admin');
 
 -- Insert events (20 events)
 INSERT INTO events (event_name, event_leader_id, location_, event_type, event_date)
@@ -154,3 +154,19 @@ SET
         -- Continue similarly for others
         ELSE environmental_interests
     END;
+
+
+
+INSERT INTO users (username, password_hash, email, role)
+VALUES
+	('zachary_lee', '$2b$12$6Pg55nTWngFkyoxmR.hjBOcWGxYt7QmegsffjZlCzRNx1cC/M/oSq', 'zachary_lee@example.com', 'customer'),
+	('april_walker', '$2b$12$Gl4v8WDi1535sJIdhK54peKbULVWXnKUuCPuycGbPascrSC2hQnPm', 'april_walker@example.com', 'customer'),
+	('brandon_hall', '$2b$12$IZg/AG5.rVvE4m2aJUqogexmy9kFttI/SFtAzz/cbNBSg8t1Kq4iC', 'brandon_hall@example.com', 'staff'),
+	('cynthia_king', '$2b$12$5pQft2ZowstzDk8HgLCw1urIrdaO42WI8YHzimooNUXKPLUgg4NCK', 'cynthia_king@example.com', 'staff'),
+	('derek_wright', '$2b$12$wbdF1CjYY9yrCrBTQsI5ceojiZwQJofT4zcw3n5dSVuZR0nVcndby', 'derek_wright@example.com', 'admin'),
+	('eric_lopez', '$2b$12$HcZ9xOH0CMx00Y4Dsd9YEe1BhEmrjS9NVOxTmN/AkP94j3qPwcbFu', 'eric_lopez@example.com', 'customer'),
+	('fiona_green', '$2b$12$eZOpyVwMtBWKS7e7aeqjCOw3IPjR9NHfJSiWQfEZdqnpjA24QlNEG', 'fiona_green@example.com', 'customer'),
+    ('george_adams', '$2b$12$kEoCPim2900d4clj20V5SO5QdomimlWTBUoMFCSogbzsaLDVKSAIq', 'george_adams@example.com', 'customer'),
+    ('hannah_baker', '$2b$12$.yUCfttbujSMJZuwhhrsLOweUx2g9DJ1EpiCIYVYX4aE0m4sRAfCS', 'hannah_baker@example.com', 'customer'),
+    ('ian_nelson', '$2b$12$.oIhu86Hu1emz1EeXUFnfu58BwvryvJyp.MOHLUPUtU7MDZk8UhBe', 'ian_nelson@example.com', 'customer'),
+    ('admin2', '$2b$12$/6RyLblwDYrqt8o12lib/Ou3yxc4bdxoAo4i7aRG0OSNMMAcgKley', 'admin2@example.com', 'admin');
