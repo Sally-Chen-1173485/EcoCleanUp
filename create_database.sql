@@ -155,7 +155,7 @@ CREATE TYPE new_status_setting AS ENUM ('active', 'inactive');
 ALTER TABLE users
     ALTER COLUMN status DROP DEFAULT;
 
-	ALTER TABLE users
+ALTER TABLE users
     ALTER COLUMN status SET DATA TYPE new_status_setting
     USING status::text::new_status_setting;
 
