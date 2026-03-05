@@ -25,8 +25,8 @@
 
 {% if session['role'] == 'Event Leaders' %}
 <section class="container mb-4">
-  <a href="{{ url_for('create_event') }}" class="btn btn-primary">+ Create New Event</a>
-  <a href="{{ url_for('staff_reports') }}" class="btn btn-info ms-2">View Reports</a>
+  <a href="{{ url_for('create_event') }}" class="btn btn-info text-bg-white">+ Create New Event</a>
+  <a href="{{ url_for('staff_reports') }}" class="btn btn-info text-bg-white ms-2">View Reports</a>
 </section>
 {% endif %}
 
@@ -132,7 +132,7 @@
 
 <!-- Event list -->
 <section class="container">
-  <h2>Event List</h2>
+  <h2> Upcoming Event List</h2>
   {% if upcoming_events and upcoming_events|length > 0 %}
     <div class="table-responsive">
     <table class="table table-striped">
