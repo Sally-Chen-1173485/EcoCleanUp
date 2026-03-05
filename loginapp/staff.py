@@ -122,7 +122,8 @@ def event_detail(event_id):
           # Fetch registered volunteers
           cursor.execute(
               '''
-              SELECT t3.registration_id, t1.user_id AS volunteer_id, t1.username, t1.full_name, t1.email,
+               SELECT t3.registration_id, t1.user_id AS volunteer_id, t1.username, t1.full_name, t1.email,
+                    t1.contact_number,
                      t3.attendance, t3.registered_at
               FROM eventregistrations t3
               JOIN users t1 ON t3.volunteer_id = t1.user_id
@@ -150,11 +151,41 @@ def event_detail(event_id):
               (event_id,))
           feedbacks = cursor.fetchall()
 
-     # render shared template in detail mode
-     # provide current date for badge comparison in template
-     return render_template('event.html', mode='detail', event=event,
-                            volunteers=volunteers, outcome=outcome, feedbacks=feedbacks,
-                            now=datetime.now())
+     if session['role'] == 'Administrators':
+          manage_attendance_url = url_for('admin_manage_attendance', event_id=event_id)
+          record_outcome_url = url_for('admin_record_outcome', event_id=event_id)
+          send_reminder_url = url_for('admin_send_reminder', event_id=event_id)
+          view_feedbacks_url = url_for('admin_view_feedbacks', event_id=event_id)
+          edit_event_url = url_for('admin_edit_event', event_id=event_id)
+          cancel_event_url = url_for('admin_cancel_event', event_id=event_id)
+          back_url = url_for('admin_events')
+     else:
+          manage_attendance_url = url_for('manage_attendance', event_id=event_id)
+          record_outcome_url = url_for('record_outcome', event_id=event_id)
+          send_reminder_url = url_for('send_reminder', event_id=event_id)
+          view_feedbacks_url = url_for('view_feedbacks', event_id=event_id)
+          edit_event_url = url_for('edit_event', event_id=event_id)
+          cancel_event_url = url_for('cancel_event', event_id=event_id)
+          back_url = url_for('staff_home')
+
+     return render_template(
+          'event_detail.html',
+          event=event,
+          volunteers=volunteers,
+          outcome=outcome,
+          feedbacks=feedbacks,
+          can_manage_event=True,
+          is_registered=False,
+          manage_attendance_url=manage_attendance_url,
+          record_outcome_url=record_outcome_url,
+          send_reminder_url=send_reminder_url,
+          view_feedbacks_url=view_feedbacks_url,
+          edit_event_url=edit_event_url,
+          cancel_event_url=cancel_event_url,
+          back_url=back_url,
+          back_label='Back to Events',
+          now=datetime.now()
+     )
 
 @app.route('/staff/event/<int:event_id>/edit', methods=['GET', 'POST'])
 def edit_event(event_id):

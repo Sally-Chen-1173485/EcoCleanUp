@@ -10,7 +10,7 @@
     <div class="row justify-content-center text-center">
         <div class="col-lg-7">
             <h1>Volunteer Home</h1>
-            <p class="lead text-muted">Browse upcoming cleanup events, register to participate, and review past activities.</p>
+          <p class="lead text-muted">Browse the event list, register to participate, and review past activities.</p>
         </div>
     </div>
 </section>
@@ -28,6 +28,63 @@
     </div>
   {% endif %}
 {% endwith %}
+
+{% if reminder_events and reminder_events|length > 0 %}
+<div class="modal fade" id="eventReminderModal" tabindex="-1" aria-labelledby="eventReminderModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="eventReminderModalLabel">Your Event Reminders</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-3">You are registered for the following upcoming event(s):</p>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Event</th>
+                <th>Time</th>
+                <th>Location</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for ev in reminder_events %}
+              <tr>
+                <td>{{ ev.event_date.strftime('%Y-%m-%d') }}</td>
+                <td><a href="{{ url_for('customer_event_detail', event_id=ev.event_id) }}">{{ ev.event_name }}</a></td>
+                <td>
+                  {% if ev.start_time or ev.end_time %}
+                    {{ ev.start_time.strftime('%H:%M') if ev.start_time else 'TBC' }} - {{ ev.end_time.strftime('%H:%M') if ev.end_time else 'TBC' }}
+                  {% else %}
+                    TBC
+                  {% endif %}
+                </td>
+                <td>{{ ev.location_ }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const reminderModalElement = document.getElementById('eventReminderModal');
+    if (reminderModalElement) {
+      const reminderModal = new bootstrap.Modal(reminderModalElement);
+      reminderModal.show();
+    }
+  });
+</script>
+{% endif %}
 
 <!-- Filter form -->
 <section class="container mb-4">
@@ -54,9 +111,9 @@
   </form>
 </section>
 
-<!-- Upcoming events list -->
+<!-- Event list -->
 <section class="container">
-  <h2>Upcoming Events</h2>
+  <h2>Event List</h2>
   {% if upcoming_events and upcoming_events|length > 0 %}
     <div class="table-responsive">
     <table class="table table-striped">
@@ -73,7 +130,7 @@
         {% for ev in upcoming_events %}
         <tr>
           <td>{{ ev.event_date.strftime('%Y-%m-%d') }}</td>
-          <td>{{ ev.event_name }}</td>
+          <td><a href="{{ url_for('customer_event_detail', event_id=ev.event_id) }}">{{ ev.event_name }}</a></td>
           <td>{{ ev.location_ }}</td>
           <td>{{ ev.event_type }}</td>
           <td>
@@ -92,44 +149,60 @@
     </table>
     </div>
   {% else %}
-    <p class="text-muted">No upcoming events match your criteria.</p>
+    <p class="text-muted">No events match your criteria.</p>
   {% endif %}
 </section>
 
 <!-- Past events and feedback -->
 <section class="container mt-5">
-  <h2>Your Past Events</h2>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h2 class="mb-0">Past Events</h2>
+    <div class="btn-group" role="group" aria-label="Past event scope">
+      <a href="{{ url_for('customer_home', date_from=date_from, date_to=date_to, location=location, event_type=event_type, past_scope='all') }}"
+         class="btn btn-sm {% if past_scope == 'all' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
+        All past events
+      </a>
+      <a href="{{ url_for('customer_home', date_from=date_from, date_to=date_to, location=location, event_type=event_type, past_scope='mine') }}"
+         class="btn btn-sm {% if past_scope == 'mine' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
+        Only my past events
+      </a>
+    </div>
+  </div>
   {% if past_events and past_events|length > 0 %}
     {% for ev in past_events %}
       <div class="card mb-3">
         <div class="card-body">
-          <h5 class="card-title">{{ ev.event_name }} ({{ ev.event_date.strftime('%Y-%m-%d') }})</h5>
+          <h5 class="card-title"><a href="{{ url_for('customer_event_detail', event_id=ev.event_id) }}">{{ ev.event_name }}</a> ({{ ev.event_date.strftime('%Y-%m-%d') }})</h5>
           <p class="card-text"><strong>Location:</strong> {{ ev.location_ }}<br>
              <strong>Type:</strong> {{ ev.event_type }}</p>
-          {% if ev.rating is not none %}
-            <div class="alert alert-info">You rated this event {{ ev.rating }} stars{% if ev.comments %} – "{{ ev.comments }}"{% endif %}.</div>
+          {% if ev.is_registered %}
+            {% if ev.rating is not none %}
+              <div class="alert alert-info">You rated this event {{ ev.rating }} stars{% if ev.comments %} – "{{ ev.comments }}"{% endif %}.</div>
+            {% else %}
+              <form method="post">
+                <div class="mb-2">
+                  <label for="rating_{{ ev.event_id }}" class="form-label">Rating</label>
+                  <select id="rating_{{ ev.event_id }}" name="rating" class="form-select" required>
+                    <option value="">Choose...</option>
+                    {% for i in range(1,6) %}<option value="{{ i }}">{{ i }}</option>{% endfor %}
+                  </select>
+                </div>
+                <div class="mb-2">
+                  <label for="comments_{{ ev.event_id }}" class="form-label">Comments (optional)</label>
+                  <textarea id="comments_{{ ev.event_id }}" name="comments" class="form-control" rows="2"></textarea>
+                </div>
+                <input type="hidden" name="event_id" value="{{ ev.event_id }}">
+                <button type="submit" name="feedback_event" class="btn btn-sm btn-success">Submit Feedback</button>
+              </form>
+            {% endif %}
           {% else %}
-            <form method="post">
-              <div class="mb-2">
-                <label for="rating_{{ ev.event_id }}" class="form-label">Rating</label>
-                <select id="rating_{{ ev.event_id }}" name="rating" class="form-select" required>
-                  <option value="">Choose...</option>
-                  {% for i in range(1,6) %}<option value="{{ i }}">{{ i }}</option>{% endfor %}
-                </select>
-              </div>
-              <div class="mb-2">
-                <label for="comments_{{ ev.event_id }}" class="form-label">Comments (optional)</label>
-                <textarea id="comments_{{ ev.event_id }}" name="comments" class="form-control" rows="2"></textarea>
-              </div>
-              <input type="hidden" name="event_id" value="{{ ev.event_id }}">
-              <button type="submit" name="feedback_event" class="btn btn-sm btn-success">Submit Feedback</button>
-            </form>
+            <p class="text-muted mb-0">You did not register for this event. Registration is closed for past events.</p>
           {% endif %}
         </div>
       </div>
     {% endfor %}
   {% else %}
-    <p class="text-muted">You have no past registered events.</p>
+    <p class="text-muted">No past events found.</p>
   {% endif %}
 </section>
 {% endblock %}

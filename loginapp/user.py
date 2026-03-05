@@ -16,6 +16,14 @@ default_user_role = 'Volunteers'
 default_status= 'active'
 
 ALLOWED_PROFILE_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+DEFAULT_PROFILE_IMAGE = 'default_plant.jpg'
+
+def get_default_profile_image_filename():
+    """Return the default profile image filename available in /static."""
+    preferred_default_path = os.path.join(app.root_path, 'static', DEFAULT_PROFILE_IMAGE)
+    if os.path.exists(preferred_default_path):
+        return DEFAULT_PROFILE_IMAGE
+    return 'image1.jpg'
 
 def upload_profile_image(file):
     """Save an uploaded profile image and return (db_path, error_message).
@@ -40,6 +48,15 @@ def upload_profile_image(file):
     file.save(os.path.join(upload_folder, unique_filename))
 
     return f'uploads/{unique_filename}', None
+
+def delete_uploaded_profile_image(file_path):
+    """Delete an uploaded profile image file if it lives under static/uploads."""
+    if not file_path or not file_path.startswith('uploads/'):
+        return
+
+    abs_path = os.path.join(app.root_path, 'static', file_path)
+    if os.path.exists(abs_path):
+        os.remove(abs_path)
 
 def user_home_url():
     """Generates a URL to the homepage for the currently logged-in user.
@@ -376,6 +393,8 @@ def profile():
         ''', (session['user_id'],))
         profile = cursor.fetchone()
 
+    default_profile_image = get_default_profile_image_filename()
+
     # handle form submission
     if request.method == 'POST':
         # grab submitted values (strip to avoid leading/trailing spaces)
@@ -383,11 +402,61 @@ def profile():
         home_address = request.form.get('home_address', '').strip()
         contact_number = request.form.get('contact_number', '').strip()
         environmental_interests = request.form.get('environmental_interests', '').strip()
-        profile_image = request.form.get('profile_image', '').strip()
+        profile_image = profile.get('profile_image')
+        uploaded_profile_image = request.files.get('profile_image_file')
+        delete_profile_image_requested = request.form.get('delete_profile_image') == '1'
+        image_upload_only = request.form.get('image_upload_only') == '1'
         # password change fields (may be blank if user isn't changing)
         current_password = request.form.get('current_password', '').strip()
         new_password = request.form.get('new_password', '').strip()
         confirm_password = request.form.get('confirm_password', '').strip()
+
+        # delete current image (revert to default display image)
+        if delete_profile_image_requested:
+            delete_uploaded_profile_image(profile.get('profile_image'))
+            profile_image = None
+            with db.get_cursor() as cursor:
+                cursor.execute('''
+                    UPDATE users
+                    SET profile_image = %s
+                    WHERE user_id = %s;
+                ''', (None, session['user_id']))
+
+            profile_updated = True
+            profile['profile_image'] = None
+
+        # upload new image
+        elif uploaded_profile_image and uploaded_profile_image.filename:
+            new_profile_image, image_upload_error = upload_profile_image(uploaded_profile_image)
+            if image_upload_error:
+                profile_image_error = image_upload_error
+            else:
+                delete_uploaded_profile_image(profile.get('profile_image'))
+                profile_image = new_profile_image
+                with db.get_cursor() as cursor:
+                    cursor.execute('''
+                        UPDATE users
+                        SET profile_image = %s
+                        WHERE user_id = %s;
+                    ''', (profile_image, session['user_id']))
+
+                profile_updated = True
+                profile['profile_image'] = profile_image
+
+        # If this submit was just from selecting an image, stop here and re-render.
+        if image_upload_only or delete_profile_image_requested:
+            return render_template('profile.html',
+                                   profile=profile,
+                                   full_name_error=full_name_error,
+                                   home_address_error=home_address_error,
+                                   contact_number_error=contact_number_error,
+                                   env_interest_error=env_interest_error,
+                                   profile_image_error=profile_image_error,
+                                   current_password_error=current_password_error,
+                                   new_password_error=new_password_error,
+                                   confirm_password_error=confirm_password_error,
+                                   profile_updated=profile_updated,
+                                   default_profile_image=default_profile_image)
 
         # validate inputs (same rules as signup)
         if not full_name or len(full_name) > 100:
@@ -468,7 +537,8 @@ def profile():
                            current_password_error=current_password_error,
                            new_password_error=new_password_error,
                            confirm_password_error=confirm_password_error,
-                           profile_updated=profile_updated)
+                           profile_updated=profile_updated,
+                           default_profile_image=default_profile_image)
 
 @app.route('/logout')
 def logout():

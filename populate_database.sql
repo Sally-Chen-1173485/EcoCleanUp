@@ -170,3 +170,11 @@ VALUES
     ('hannah_baker', '$2b$12$.yUCfttbujSMJZuwhhrsLOweUx2g9DJ1EpiCIYVYX4aE0m4sRAfCS', 'hannah_baker@example.com', 'customer'),
     ('ian_nelson', '$2b$12$.oIhu86Hu1emz1EeXUFnfu58BwvryvJyp.MOHLUPUtU7MDZk8UhBe', 'ian_nelson@example.com', 'customer'),
     ('admin2', '$2b$12$/6RyLblwDYrqt8o12lib/Ou3yxc4bdxoAo4i7aRG0OSNMMAcgKley', 'admin2@example.com', 'admin');
+
+
+
+    INSERT INTO events (event_name, event_leader_id, location_, event_type, event_date)
+VALUES
+    ('Park  pickup', 5, 'Ocean Beach', 'Environmental', '2026-02-01'),
+    ('Muriwai Clean-up', 4, 'Long Bay', 'Environmental', '2026-03-15'),
+    ('Community Recycling Drive', 3, 'Central Park', 'work', '2026-03-5');

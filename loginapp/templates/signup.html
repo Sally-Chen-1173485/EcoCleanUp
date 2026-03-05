@@ -28,11 +28,11 @@
           <div class="col-md-auto col-lg-5 col-xl-4 py-5">
             {% if signup_successful %}
             <div class="alert alert-success text-center" role="alert">
-              You have successfully signed up! <a href="{{ url_for('login') }}">Log in</a>
+              You have successfully Registered as a volunteer! <a href="{{ url_for('login') }}">Log in</a>
             </div>
             {% endif %}
               <div class="bg-primary text-white border border-bottom-0 rounded-top text-center">
-                  <h1 class="p-3 m-0">Sign up</h1>
+                  <h1 class="p-3 m-0">Register</h1>
               </div>
                 <div class="bg-white border container">
                   <form class="p-3 needs-validation" action="{{ url_for('signup') }}" method="post" enctype="multipart/form-data" novalidate>
@@ -86,7 +86,7 @@
                       <div class="invalid-feedback">{{ profile_image_error }}</div>
                     </div>
                     <div class="text-center">
-                      <button type="submit" class="btn btn-primary">Sign Up</button>
+                      <button type="submit" class="btn btn-primary">Submit my registration</button>
                     </div>
                   </form>
               </div>

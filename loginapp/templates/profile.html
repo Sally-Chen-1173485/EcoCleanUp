@@ -26,7 +26,25 @@
     </div>
     {% endif %}
 
-    <form method="post" action="{{ url_for('profile') }}" class="needs-validation" novalidate>
+    <form method="post" action="{{ url_for('profile') }}" class="needs-validation" enctype="multipart/form-data" novalidate>
+        <input type="hidden" id="image_upload_only" name="image_upload_only" value="0">
+        <div class="row justify-content-center">
+            <div class="col-lg-6 text-center mb-4">
+                <label for="profile_image_file" class="profile-avatar-button" title="Click to upload a new profile image">
+                    <img src="{{ url_for('static', filename=profile.profile_image if profile.profile_image else default_profile_image) }}" class="profile-avatar-img" alt="Profile image">
+                </label>
+                <input type="file" class="d-none" id="profile_image_file" name="profile_image_file" accept=".png,.jpg,.jpeg,.gif,.webp">
+                <div class="form-text">Click the image to upload a new one.</div>
+                {% if profile_image_error %}
+                <div class="text-danger small mt-1">{{ profile_image_error }}</div>
+                {% endif %}
+                {% if profile.profile_image %}
+                <div class="mt-2">
+                    <button type="submit" class="btn btn-outline-danger btn-sm" name="delete_profile_image" value="1" formnovalidate>Delete current image</button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
         <div class="row justify-content-center">
             <div class="col-lg-3 mb-3">
                 <label for="username" class="form-label">Username</label>
@@ -47,11 +65,6 @@
                 <label for="full_name" class="form-label">Full Name <span class="text-danger fw-bold">*</span></label>
                 <input type="text" class="form-control{% if full_name_error %} is-invalid{% endif %}" id="full_name" name="full_name" maxlength="100" value="{{ profile.full_name or '' }}" required>
                 <div class="invalid-feedback">{{ full_name_error or 'Please provide your full name (max 100 characters).' }}</div>
-                <div class="form-group">
-                  <label for="profile_picture">Upload Profile Picture</label>
-                  <input type="file" class="form-control" id="profile_picture" name="profile_picture" accept="image/*" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Submit</button>
             </div>
         </div>
         <div class="row justify-content-center">
@@ -93,18 +106,6 @@
                 <div class="invalid-feedback">{{ env_interest_error or 'Please list your environmental interests.' }}</div>
             </div>
         </div>
-        <div class="row justify-content-center">
-            <div class="col-lg-6 mb-3">
-                <div>
-                    <div class="form-text text-secondary font-monospace badge bg-info-subtle mt-3 mb-2">
-                        Profile image URL is optional but must be valid if provided.
-                    </div>
-                </div>
-                <label for="profile_image" class="form-label">Profile Image URL (optional)</label>
-                <input type="text" class="form-control{% if profile_image_error %} is-invalid{% endif %}" id="profile_image" name="profile_image" maxlength="255" value="{{ profile.profile_image or '' }}">
-                <div class="invalid-feedback">{{ profile_image_error }}</div>
-            </div>
-        </div>
         <hr>
         <div class="row justify-content-center mb-3">
             <div class="col-lg-6">
@@ -143,4 +144,19 @@
         </div>
     </form>
 </section>
+
+<script>
+    const profileImageInput = document.getElementById('profile_image_file');
+    const imageUploadOnly = document.getElementById('image_upload_only');
+    const profileForm = profileImageInput ? profileImageInput.closest('form') : null;
+
+    if (profileImageInput && imageUploadOnly && profileForm) {
+        profileImageInput.addEventListener('change', function () {
+            if (this.files && this.files.length > 0) {
+                imageUploadOnly.value = '1';
+                profileForm.submit();
+            }
+        });
+    }
+</script>
 {% endblock %}

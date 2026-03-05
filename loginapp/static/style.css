@@ -95,6 +95,19 @@ a:hover {
     background-size: 65% 65%;
 }
 
+.profile-avatar-button {
+    display: inline-block;
+    cursor: pointer;
+}
+
+.profile-avatar-img {
+    width: 140px;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 3px solid var(--theme-deepblue);
+}
+
 /* hero section used on public home page */
 .hero-section {
     background: linear-gradient(135deg, #001f3f 0%, #002d5c 100%);

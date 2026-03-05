@@ -48,26 +48,35 @@
                 </div>
             </div>
 
+            {% if can_manage_event %}
             <!-- Action Buttons -->
             <div class="mb-4">
                 <div class="btn-group w-100 flex-wrap" role="group">
-                    <a href="{{ url_for('manage_attendance', event_id=event.event_id) }}" class="btn btn-outline-primary">Track Attendance</a>
-                    <a href="{{ url_for('record_outcome', event_id=event.event_id) }}" class="btn btn-outline-success">Record Outcome</a>
-                    <a href="{{ url_for('send_reminder', event_id=event.event_id) }}" class="btn btn-outline-info" onclick="return confirm('Send reminder to all registered volunteers?')">Send Reminder</a>
-                    <a href="{{ url_for('view_feedbacks', event_id=event.event_id) }}" class="btn btn-outline-secondary">View Feedbacks</a>
+                    <a href="{{ manage_attendance_url }}" class="btn btn-outline-primary">Track Attendance</a>
+                    <a href="{{ record_outcome_url }}" class="btn btn-outline-success">Record Outcome</a>
+                    <a href="{{ send_reminder_url }}" class="btn btn-outline-info" onclick="return confirm('Send reminder to all registered volunteers?')">Send Reminder</a>
+                    <a href="{{ view_feedbacks_url }}" class="btn btn-outline-secondary">View Feedbacks</a>
                 </div>
             </div>
 
             <!-- Edit/Cancel Buttons -->
             <div class="mb-4">
                 <div class="btn-group w-100 flex-wrap" role="group">
-                    <a href="{{ url_for('edit_event', event_id=event.event_id) }}" class="btn btn-secondary">Edit Event</a>
-                    <form method="post" action="{{ url_for('cancel_event', event_id=event.event_id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to cancel this event? This cannot be undone.')">
+                    <a href="{{ edit_event_url }}" class="btn btn-secondary">Edit Event</a>
+                    <form method="post" action="{{ cancel_event_url }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to cancel this event? This cannot be undone.')">
                         <button type="submit" class="btn btn-danger">Cancel Event</button>
                     </form>
                 </div>
             </div>
+            {% elif is_registered %}
+            <div class="mb-4 text-center">
+                <form method="post" action="{{ deregister_url }}" onsubmit="return confirm('Are you sure you want to deregister from this event?');">
+                    <button type="submit" class="btn btn-outline-danger">Deregister</button>
+                </form>
+            </div>
+            {% endif %}
 
+            {% if can_manage_event %}
             <!-- Volunteers List -->
             <div class="card mb-4">
                 <div class="card-header bg-light">
@@ -117,7 +126,9 @@
                     {% endif %}
                 </div>
             </div>
+            {% endif %}
 
+            {% if can_manage_event %}
             <!-- Event Outcomes -->
             {% if outcome %}
             <div class="card mb-4">
@@ -142,10 +153,11 @@
                 </div>
             </div>
             {% endif %}
+            {% endif %}
 
             <!-- Back Button -->
             <div class="text-center">
-                <a href="{{ url_for('staff_home') }}" class="btn btn-secondary">Back to Events</a>
+                <a href="{{ back_url }}" class="btn btn-secondary">{{ back_label }}</a>
             </div>
         </div>
     </div>
