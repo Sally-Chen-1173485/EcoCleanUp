@@ -209,7 +209,7 @@ def admin_users():
     status_filter = request.args.get('status', '').strip()
 
     valid_roles = ('Volunteers', 'Event Leaders', 'Administrators')
-    valid_statuses = ('active', 'nonactive', 'banned', 'suspended')
+    valid_statuses = ('active', 'inactive')
 
     if role_filter not in valid_roles:
         role_filter = ''
@@ -258,7 +258,7 @@ def admin_update_status(user_id):
         return render_template('access_denied.html'), 403
 
     status = request.form.get('status')
-    if status in ('active', 'nonactive', 'banned', 'suspended'):
+    if status in ('active', 'inactive'):
         with db.get_cursor() as cursor:
             cursor.execute('UPDATE users SET status = %s WHERE user_id = %s;', (status, user_id))
         flash('User status updated.', 'success')
@@ -300,6 +300,29 @@ def admin_reports():
             )
             engagement = cursor.fetchall()
 
+            cursor.execute(
+                '''
+                SELECT e.event_id,
+                       e.event_name,
+                       e.event_date,
+                       e.location_,
+                       e.event_type,
+                       COALESCE(u.full_name, u.username, 'Event Leader') AS leader_name,
+                       COALESCE(reg.reg_count, 0) AS registered_count,
+                       COALESCE(out.num_attendees, 0) AS num_attendees
+                FROM events e
+                LEFT JOIN users u ON e.event_leader_id = u.user_id
+                LEFT JOIN (
+                    SELECT event_id, COUNT(*) AS reg_count
+                    FROM eventregistrations
+                    GROUP BY event_id
+                ) reg ON reg.event_id = e.event_id
+                LEFT JOIN eventoutcomes out ON out.event_id = e.event_id
+                ORDER BY e.event_date DESC, e.event_id DESC;
+                '''
+            )
+            all_event_reports = cursor.fetchall()
+
             return render_template(
                 'admin_reports.html',
                 is_admin=True,
@@ -310,6 +333,7 @@ def admin_reports():
                 avg_rating=avg_rating,
                 attendance_counts=attendance_counts,
                 engagement=engagement,
+                all_event_reports=all_event_reports,
                 leader_event_reports=[]
             )
 

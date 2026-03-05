@@ -273,6 +273,7 @@ def customer_event_detail(event_id):
 
      user_id = session['user_id']
      is_volunteer = session.get('role') == 'Volunteers'
+     is_admin = session.get('role') == 'Administrators'
      with db.get_cursor() as cursor:
           cursor.execute('''
                SELECT t4.*, t1.full_name AS leader_name
@@ -310,6 +311,7 @@ def customer_event_detail(event_id):
           outcome=None,
           feedbacks=[],
           can_manage_event=False,
+          is_admin=is_admin,
           is_registered=is_registered,
           deregister_url=url_for('customer_deregister_event', event_id=event_id),
           back_url=back_url,

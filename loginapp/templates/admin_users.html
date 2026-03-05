@@ -32,9 +32,8 @@
                     <select id="status" name="status" class="form-select">
                         <option value="" {% if not status_filter %}selected{% endif %}>All</option>
                         <option value="active" {% if status_filter == 'active' %}selected{% endif %}>active</option>
-                        <option value="nonactive" {% if status_filter == 'nonactive' %}selected{% endif %}>nonactive</option>
-                        <option value="banned" {% if status_filter == 'banned' %}selected{% endif %}>banned</option>
-                        <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>suspended</option>
+                        <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>inactive</option>
+        
                     </select>
                 </div>
                 <div class="col-md-2 align-self-end">
@@ -67,9 +66,8 @@
                                 <form method="post" action="{{ url_for('admin_update_status', user_id=u.user_id) }}" class="d-inline">
                                     <select name="status" class="form-select form-select-sm d-inline w-auto">
                                         <option value="active" {% if u.status=='active' %}selected{% endif %}>active</option>
-                                        <option value="nonactive" {% if u.status=='nonactive' %}selected{% endif %}>nonactive</option>
-                                        <option value="banned" {% if u.status=='banned' %}selected{% endif %}>banned</option>
-                                        <option value="suspended" {% if u.status=='suspended' %}selected{% endif %}>suspended</option>
+                                        <option value="inactive" {% if u.status=='inactive' %}selected{% endif %}>inactive</option>
+                                        
                                     </select>
                                     <button class="btn btn-sm btn-secondary">Update</button>
                                 </form>

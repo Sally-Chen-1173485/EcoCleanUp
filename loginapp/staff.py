@@ -143,6 +143,16 @@ def create_event():
           location = request.form.get('location', '').strip()
           event_type = request.form.get('event_type', '').strip()
           event_date = request.form.get('event_date', '').strip()
+          start_time = request.form.get('start_time', '').strip()
+          end_time = request.form.get('end_time', '').strip()
+          duration = request.form.get('duration', '').strip()
+          description = request.form.get('description', '').strip()
+          supplies = request.form.get('supplies', '').strip()
+          safety_instructions = request.form.get('safety_instructions', '').strip()
+
+          start_time_value = None
+          end_time_value = None
+          duration_value = None
 
           if not event_name or len(event_name) > 100:
                errors['event_name'] = 'Event name required (max 100 chars)'
@@ -160,12 +170,46 @@ def create_event():
                except:
                     errors['event_date'] = 'Invalid date format'
 
+          if start_time:
+               try:
+                    start_time_value = datetime.strptime(start_time, '%H:%M').time()
+               except:
+                    errors['start_time'] = 'Invalid start time format'
+
+          if end_time:
+               try:
+                    end_time_value = datetime.strptime(end_time, '%H:%M').time()
+               except:
+                    errors['end_time'] = 'Invalid end time format'
+
+          if start_time_value and end_time_value and start_time_value >= end_time_value:
+               errors['end_time'] = 'End time must be after start time'
+
+          if duration:
+               try:
+                    duration_value = int(duration)
+                    if duration_value <= 0:
+                         errors['duration'] = 'Duration must be a positive integer'
+               except:
+                    errors['duration'] = 'Duration must be an integer'
+
+          if len(description) > 5000:
+               errors['description'] = 'Description cannot exceed 5000 characters'
+          if len(supplies) > 5000:
+               errors['supplies'] = 'Supplies cannot exceed 5000 characters'
+          if len(safety_instructions) > 5000:
+               errors['safety_instructions'] = 'Safety instructions cannot exceed 5000 characters'
+
           if not errors:
                with db.get_cursor() as cursor:
                     cursor.execute(
-                        'INSERT INTO events (event_name, event_leader_id, location_, event_type, event_date) '
-                        'VALUES (%s, %s, %s, %s, %s);',
-                        (event_name, user_id, location, event_type, event_date))
+                        'INSERT INTO events '
+                        '(event_name, event_leader_id, location_, event_type, event_date, '
+                        'start_time, end_time, duration, description_, supplies, safety_instructions) '
+                        'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);',
+                        (event_name, user_id, location, event_type, event_date,
+                         start_time_value, end_time_value, duration_value,
+                         description or None, supplies or None, safety_instructions or None))
                flash('Event created successfully!', 'success')
                return redirect(url_for('staff_home'))
 
@@ -254,6 +298,7 @@ def event_detail(event_id):
           outcome=outcome,
           feedbacks=feedbacks,
           can_manage_event=can_manage_event,
+          is_admin=is_admin,
           is_registered=False,
           manage_attendance_url=manage_attendance_url,
           record_outcome_url=record_outcome_url,
@@ -294,6 +339,16 @@ def edit_event(event_id):
           location = request.form.get('location', '').strip()
           event_type = request.form.get('event_type', '').strip()
           event_date = request.form.get('event_date', '').strip()
+          start_time = request.form.get('start_time', '').strip()
+          end_time = request.form.get('end_time', '').strip()
+          duration = request.form.get('duration', '').strip()
+          description = request.form.get('description', '').strip()
+          supplies = request.form.get('supplies', '').strip()
+          safety_instructions = request.form.get('safety_instructions', '').strip()
+
+          start_time_value = None
+          end_time_value = None
+          duration_value = None
 
           if not event_name or len(event_name) > 100:
                errors['event_name'] = 'Event name required (max 100 chars)'
@@ -304,12 +359,47 @@ def edit_event(event_id):
           if not event_date:
                errors['event_date'] = 'Event date required'
 
+          if start_time:
+               try:
+                    start_time_value = datetime.strptime(start_time, '%H:%M').time()
+               except:
+                    errors['start_time'] = 'Invalid start time format'
+
+          if end_time:
+               try:
+                    end_time_value = datetime.strptime(end_time, '%H:%M').time()
+               except:
+                    errors['end_time'] = 'Invalid end time format'
+
+          if start_time_value and end_time_value and start_time_value >= end_time_value:
+               errors['end_time'] = 'End time must be after start time'
+
+          if duration:
+               try:
+                    duration_value = int(duration)
+                    if duration_value <= 0:
+                         errors['duration'] = 'Duration must be a positive integer'
+               except:
+                    errors['duration'] = 'Duration must be an integer'
+
+          if len(description) > 5000:
+               errors['description'] = 'Description cannot exceed 5000 characters'
+          if len(supplies) > 5000:
+               errors['supplies'] = 'Supplies cannot exceed 5000 characters'
+          if len(safety_instructions) > 5000:
+               errors['safety_instructions'] = 'Safety instructions cannot exceed 5000 characters'
+
           if not errors:
                with db.get_cursor() as cursor:
                     cursor.execute(
                         'UPDATE events SET event_name = %s, location_ = %s, '
-                        'event_type = %s, event_date = %s WHERE event_id = %s;',
-                        (event_name, location, event_type, event_date, event_id))
+                        'event_type = %s, event_date = %s, start_time = %s, end_time = %s, '
+                        'duration = %s, description_ = %s, supplies = %s, safety_instructions = %s '
+                        'WHERE event_id = %s;',
+                        (event_name, location, event_type, event_date,
+                         start_time_value, end_time_value, duration_value,
+                         description or None, supplies or None, safety_instructions or None,
+                         event_id))
                flash('Event updated successfully!', 'success')
                return redirect(url_for('event_detail', event_id=event_id))
 

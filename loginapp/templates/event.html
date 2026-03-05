@@ -76,6 +76,56 @@
                         <div class="text-danger small mt-1">{{ errors['event_date'] }}</div>
                         {% endif %}
                     </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="start_time" class="form-label">Start Time</label>
+                            <input type="time" class="form-control" id="start_time" name="start_time"
+                                   value="{{ event.start_time.strftime('%H:%M') if event and mode=='edit' and event.start_time else '' }}">
+                            {% if errors.get('start_time') %}
+                            <div class="text-danger small mt-1">{{ errors['start_time'] }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="end_time" class="form-label">End Time</label>
+                            <input type="time" class="form-control" id="end_time" name="end_time"
+                                   value="{{ event.end_time.strftime('%H:%M') if event and mode=='edit' and event.end_time else '' }}">
+                            {% if errors.get('end_time') %}
+                            <div class="text-danger small mt-1">{{ errors['end_time'] }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="duration" class="form-label">Duration (minutes)</label>
+                            <input type="number" class="form-control" id="duration" name="duration" min="1"
+                                   value="{{ event.duration if event and mode=='edit' and event.duration is not none else '' }}">
+                            {% if errors.get('duration') %}
+                            <div class="text-danger small mt-1">{{ errors['duration'] }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" maxlength="1000">{{ event.description_ if event and mode=='edit' and event.description_ else '' }}</textarea>
+                        {% if errors.get('description') %}
+                        <div class="text-danger small mt-1">{{ errors['description'] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="supplies" class="form-label">Supplies</label>
+                        <textarea class="form-control" id="supplies" name="supplies" rows="3" maxlength="1000">{{ event.supplies if event and mode=='edit' and event.supplies else '' }}</textarea>
+                        {% if errors.get('supplies') %}
+                        <div class="text-danger small mt-1">{{ errors['supplies'] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="safety_instructions" class="form-label">Safety Instructions</label>
+                        <textarea class="form-control" id="safety_instructions" name="safety_instructions" rows="3" maxlength="1000">{{ event.safety_instructions if event and mode=='edit' and event.safety_instructions else '' }}</textarea>
+                        {% if errors.get('safety_instructions') %}
+                        <div class="text-danger small mt-1">{{ errors['safety_instructions'] }}</div>
+                        {% endif %}
+                    </div>
                     <div class="text-center">
                         <button type="submit" class="btn btn-primary">
                             {% if mode=='create' %}Create Event{% else %}Save Changes{% endif %}

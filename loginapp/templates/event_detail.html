@@ -50,6 +50,7 @@
 
             {% if can_manage_event %}
             <!-- Action Buttons -->
+            {% if not is_admin %}
             <div class="mb-4">
                 <div class="btn-group w-100 flex-wrap" role="group">
                     <a href="{{ manage_attendance_url }}" class="btn btn-outline-primary">Track Attendance</a>
@@ -60,6 +61,7 @@
                     <a href="{{ view_feedbacks_url }}" class="btn btn-outline-secondary">View Feedbacks</a>
                 </div>
             </div>
+            {% endif %}
 
             <!-- Edit/Cancel Buttons -->
             <div class="mb-4">
@@ -94,7 +96,9 @@
                                         <th>Email</th>
                                         <th>Phone</th>
                                         <th>Status</th>
+                                        {% if not is_admin %}
                                         <th>Actions</th>
+                                        {% endif %}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -112,12 +116,14 @@
                                                 <span class="badge bg-secondary">Pending</span>
                                             {% endif %}
                                         </td>
+                                        {% if not is_admin %}
                                         <td>
                                             <a href="{{ url_for('volunteer_history', volunteer_id=volunteer.volunteer_id) }}" class="btn btn-sm btn-outline-info" title="View history">History</a>
                                             <form method="post" action="{{ url_for('remove_volunteer', event_id=event.event_id, volunteer_id=volunteer.volunteer_id) }}" style="display: inline;" onsubmit="return confirm('Remove this volunteer from the event?')">
                                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove volunteer">Remove</button>
                                             </form>
                                         </td>
+                                        {% endif %}
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -130,7 +136,7 @@
             </div>
             {% endif %}
 
-            {% if can_manage_event %}
+            {% if can_manage_event and not is_admin %}
             <!-- Event Outcomes -->
             {% if outcome %}
             <div class="card mb-4">

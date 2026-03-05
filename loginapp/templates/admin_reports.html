@@ -56,6 +56,40 @@
             {% else %}
             <p class="text-muted">No engagement data available.</p>
             {% endif %}
+
+            <h3 class="mt-4">All Events</h3>
+            {% if all_event_reports %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Event</th>
+                            <th>Location</th>
+                            <th>Type</th>
+                            <th>Leader</th>
+                            <th>Registered</th>
+                            <th>Attendees</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in all_event_reports %}
+                        <tr>
+                            <td>{{ row.event_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ row.event_name }}</td>
+                            <td>{{ row.location_ }}</td>
+                            <td>{{ row.event_type }}</td>
+                            <td>{{ row.leader_name }}</td>
+                            <td>{{ row.registered_count }}</td>
+                            <td>{{ row.num_attendees }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No events available.</p>
+            {% endif %}
             {% else %}
             {% if leader_event_reports %}
             <div class="table-responsive">
