@@ -18,10 +18,6 @@
 <section class="container">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            {% if errors.get('general') %}
-            <div class="alert alert-danger">{{ errors['general'] }}</div>
-            {% endif %}
-
             {% if volunteers %}
                 <form method="post" class="needs-validation" novalidate>
                     <div class="table-responsive">
@@ -36,17 +32,13 @@
                             <tbody>
                                 {% for volunteer in volunteers %}
                                 <tr>
-                                    <td><strong>{{ volunteer.full_name }}</strong></td>
+                                    <td><strong>{{ volunteer.full_name or volunteer.username }}</strong></td>
                                     <td>{{ volunteer.email }}</td>
                                     <td>
                                         <select name="attendance_{{ volunteer.registration_id }}" class="form-select">
-                                            <option value="">-- Select Status --</option>
-                                            <option value="Pending" {% if volunteer.attendance == 'Pending' %}selected{% endif %}>Pending</option>
-                                            <option value="Present" {% if volunteer.attendance == 'Present' %}selected{% endif %}>Present</option>
-                                            <option value="Absent" {% if volunteer.attendance == 'Absent' %}selected{% endif %}>Absent</option>
-                                            <option value="Late" {% if volunteer.attendance == 'Late' %}selected{% endif %}>Late</option>
-                                            <option value="Excused" {% if volunteer.attendance == 'Excused' %}selected{% endif %}>Excused</option>
-                                            <option value="No-Show" {% if volunteer.attendance == 'No-Show' %}selected{% endif %}>No-Show</option>
+                                            {% for status in attendance_statuses %}
+                                            <option value="{{ status }}" {% if volunteer.attendance == status %}selected{% endif %}>{{ status }}</option>
+                                            {% endfor %}
                                         </select>
                                     </td>
                                 </tr>
@@ -69,20 +61,4 @@
         </div>
     </div>
 </section>
-
-<script>
-    (function () {
-        'use strict'
-        var forms = document.querySelectorAll('.needs-validation')
-        Array.prototype.slice.call(forms).forEach(function (form) {
-            form.addEventListener('submit', function (event) {
-                if (!form.checkValidity()) {
-                    event.preventDefault()
-                    event.stopPropagation()
-                }
-                form.classList.add('was-validated')
-            }, false)
-        })
-    })()
-</script>
 {% endblock %}

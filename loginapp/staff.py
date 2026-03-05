@@ -41,19 +41,43 @@ def staff_home():
      elif session['role'] not in ('Event Leaders','Administrators'):
           return render_template('access_denied.html'), 403
 
-     user_id = session['user_id']
+     date_from = request.args.get('date_from', '')
+     date_to = request.args.get('date_to', '')
+     location = request.args.get('location', '')
+     evtype = request.args.get('event_type', '')
 
-     # Fetch events. administrators see all, leaders only their own
+     query = 'SELECT * FROM events WHERE event_date >= %s'
+     params = [date.today()]
+     if date_from:
+          query += ' AND event_date >= %s'
+          params.append(date_from)
+     if date_to:
+          query += ' AND event_date <= %s'
+          params.append(date_to)
+     if location:
+          query += ' AND location_ ILIKE %s'
+          params.append(f"%{location}%")
+     if evtype:
+          query += ' AND event_type ILIKE %s'
+          params.append(evtype)
+     query += ' ORDER BY event_date ASC'
+
      with db.get_cursor() as cursor:
-          if session['role']=='Administrators':
-               cursor.execute('SELECT * FROM events ORDER BY event_date ASC;')
-          else:
-               cursor.execute(
-                   'SELECT * FROM events WHERE event_leader_id = %s ORDER BY event_date ASC;',
-                   (user_id,))
-          events = cursor.fetchall()
+          cursor.execute(query, tuple(params))
+          upcoming_events = cursor.fetchall()
 
-     return render_template('staff_home.html', events=events)
+     return render_template(
+          'customer_home.html',
+          upcoming_events=upcoming_events,
+          registered_ids=set(),
+          past_events=[],
+          reminder_events=[],
+          date_from=date_from,
+          date_to=date_to,
+          location=location,
+          event_type=evtype,
+          past_scope='all'
+     )
 
 @app.route('/staff/event/create', methods=['GET', 'POST'])
 def create_event():
@@ -98,7 +122,8 @@ def create_event():
                return redirect(url_for('staff_home'))
 
      # use unified template
-     return render_template('event.html', mode='create', errors=errors)
+     return render_template('event.html', mode='create', errors=errors,
+                            today_iso=date.today().isoformat())
 
 @app.route('/staff/event/<int:event_id>')
 def event_detail(event_id):
@@ -109,14 +134,18 @@ def event_detail(event_id):
           return render_template('access_denied.html'), 403
 
      user_id = session['user_id']
+     is_admin = session['role'] == 'Administrators'
 
      with db.get_cursor() as cursor:
-          cursor.execute(
-              'SELECT * FROM events WHERE event_id = %s AND event_leader_id = %s;',
-              (event_id, user_id))
+          cursor.execute('''
+              SELECT t4.*, t1.full_name AS leader_name, t1.username AS leader_username
+              FROM events t4
+              LEFT JOIN users t1 ON t4.event_leader_id = t1.user_id
+              WHERE t4.event_id = %s;
+          ''', (event_id,))
           event = cursor.fetchone()
           if not event:
-               flash('Event not found or you do not have permission.', 'danger')
+               flash('Event not found.', 'danger')
                return redirect(url_for('staff_home'))
 
           # Fetch registered volunteers
@@ -151,7 +180,9 @@ def event_detail(event_id):
               (event_id,))
           feedbacks = cursor.fetchall()
 
-     if session['role'] == 'Administrators':
+     can_manage_event = is_admin or (event['event_leader_id'] == user_id)
+
+     if is_admin:
           manage_attendance_url = url_for('admin_manage_attendance', event_id=event_id)
           record_outcome_url = url_for('admin_record_outcome', event_id=event_id)
           send_reminder_url = url_for('admin_send_reminder', event_id=event_id)
@@ -174,7 +205,7 @@ def event_detail(event_id):
           volunteers=volunteers,
           outcome=outcome,
           feedbacks=feedbacks,
-          can_manage_event=True,
+          can_manage_event=can_manage_event,
           is_registered=False,
           manage_attendance_url=manage_attendance_url,
           record_outcome_url=record_outcome_url,
@@ -235,7 +266,8 @@ def edit_event(event_id):
                return redirect(url_for('event_detail', event_id=event_id))
 
      # unified template for edit mode
-     return render_template('event.html', mode='edit', event=event, errors=errors)
+     return render_template('event.html', mode='edit', event=event, errors=errors,
+                            today_iso=date.today().isoformat())
 
 @app.route('/staff/event/<int:event_id>/cancel', methods=['POST'])
 def cancel_event(event_id):
@@ -310,37 +342,42 @@ def manage_attendance(event_id):
 
      user_id = session['user_id']
 
+     valid_attendance_statuses = ('Present', 'Absent', 'Late', 'Excused', 'No-Show', 'Pending')
+
      with db.get_cursor() as cursor:
-          cursor.execute(
-              'SELECT * FROM events WHERE event_id = %s AND event_leader_id = %s;',
-              (event_id, user_id))
+          if session['role'] == 'Administrators':
+               cursor.execute('SELECT * FROM events WHERE event_id = %s;', (event_id,))
+          else:
+               cursor.execute(
+                   'SELECT * FROM events WHERE event_id = %s AND event_leader_id = %s;',
+                   (event_id, user_id))
           event = cursor.fetchone()
           if not event:
                flash('Event not found or you do not have permission.', 'danger')
                return redirect(url_for('staff_home'))
 
           if request.method == 'POST':
-               # Update attendance for each volunteer
                cursor.execute(
-                   'SELECT volunteer_id FROM eventregistrations WHERE event_id = %s;',
+                   'SELECT registration_id FROM eventregistrations WHERE event_id = %s;',
                    (event_id,))
                volunteers = cursor.fetchall()
                for vol in volunteers:
-                    vol_id = vol['volunteer_id']
-                    attendance = request.form.get(f'attendance_{vol_id}')
-                    if attendance:
+                    registration_id = vol['registration_id']
+                    attendance = request.form.get(f'attendance_{registration_id}')
+                    if attendance and attendance in valid_attendance_statuses:
                          cursor.execute(
                              'UPDATE eventregistrations SET attendance = %s '
-                             'WHERE event_id = %s AND volunteer_id = %s;',
-                             (attendance, event_id, vol_id))
+                             'WHERE event_id = %s AND registration_id = %s;',
+                             (attendance, event_id, registration_id))
                flash('Attendance updated successfully!', 'success')
-               return redirect(url_for('event_detail', event_id=event_id))
+
+               return redirect(url_for('manage_attendance', event_id=event_id))
 
           # Fetch volunteers with current attendance
           cursor.execute(
               '''
               SELECT t3.registration_id, t1.user_id AS volunteer_id, t1.username, t1.full_name,
-                     t3.attendance
+                     t1.email, t3.attendance
               FROM eventregistrations t3
               JOIN users t1 ON t3.volunteer_id = t1.user_id
               WHERE t3.event_id = %s
@@ -349,7 +386,8 @@ def manage_attendance(event_id):
               (event_id,))
           volunteers = cursor.fetchall()
 
-     return render_template('manage_attendance.html', event=event, volunteers=volunteers)
+     return render_template('manage_attendance.html', event=event, volunteers=volunteers,
+                            attendance_statuses=valid_attendance_statuses)
 
 @app.route('/staff/event/<int:event_id>/outcome', methods=['GET', 'POST'])
 def record_outcome(event_id):
@@ -398,6 +436,11 @@ def record_outcome(event_id):
                              (num_attendees, bags_collected, recyclables_sorted,
                               other_achievements, event_id))
                     else:
+                         # Something to do with the sequence to avoid conflict if outcome_id is ever used as a reference in the future
+                         cursor.execute(
+                             "SELECT setval(pg_get_serial_sequence('eventoutcomes', 'outcome_id'), "
+                             "COALESCE((SELECT MAX(outcome_id) FROM eventoutcomes), 0) + 1, FALSE);"
+                         )
                          cursor.execute(
                              'INSERT INTO eventoutcomes '
                              '(event_id, num_attendees, bags_collected, recyclables_sorted, '
@@ -449,11 +492,15 @@ def send_reminder(event_id):
           return render_template('access_denied.html'), 403
 
      user_id = session['user_id']
+     is_admin = session['role'] == 'Administrators'
 
      with db.get_cursor() as cursor:
-          cursor.execute(
-              'SELECT * FROM events WHERE event_id = %s AND event_leader_id = %s;',
-              (event_id, user_id))
+          if is_admin:
+               cursor.execute('SELECT * FROM events WHERE event_id = %s;', (event_id,))
+          else:
+               cursor.execute(
+                   'SELECT * FROM events WHERE event_id = %s AND event_leader_id = %s;',
+                   (event_id, user_id))
           event = cursor.fetchone()
           if not event:
                flash('Event not found or you do not have permission.', 'danger')
@@ -461,14 +508,25 @@ def send_reminder(event_id):
 
           # Fetch registered volunteers
           cursor.execute(
-              'SELECT t1.email FROM eventregistrations t3 '
+              'SELECT t1.user_id, t1.email FROM eventregistrations t3 '
               'JOIN users t1 ON t3.volunteer_id = t1.user_id '
               'WHERE t3.event_id = %s;',
               (event_id,))
           volunteers = cursor.fetchall()
 
-     # In a real implementation, send emails here
-     # For now, just flash a message
+          if volunteers:
+               reminder_message = f"Reminder: {event['event_name']} is coming up on {event['event_date'].strftime('%Y-%m-%d')}."
+               cursor.execute(
+                    '''
+                    UPDATE eventregistrations
+                    SET reminder_pending = TRUE,
+                        reminder_sent_at = NOW(),
+                        reminder_message = %s
+                    WHERE event_id = %s;
+                    ''',
+                    (reminder_message, event_id)
+               )
+
      if volunteers:
           flash(f'Reminder sent to {len(volunteers)} volunteer(s) for {event["event_name"]}.', 'success')
      else:

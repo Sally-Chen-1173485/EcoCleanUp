@@ -87,6 +87,9 @@ CREATE TABLE IF NOT EXISTS eventregistrations
     volunteer_id integer NOT NULL,
     attendance attendance_type DEFAULT 'Pending',
     registered_at timestamp with time zone,
+  reminder_pending boolean NOT NULL DEFAULT FALSE,
+  reminder_sent_at timestamp with time zone,
+  reminder_message text,
     CONSTRAINT fk_event
         FOREIGN KEY (event_id)
         REFERENCES events (event_id)
@@ -137,3 +140,23 @@ ALTER TABLE events
   ADD COLUMN supplies TEXT,
   ADD COLUMN safety_instructions TEXT, 
   ADD COLUMN created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP;
+
+
+
+
+ALTER TYPE status_setting ADD VALUE 'inactive';
+
+UPDATE users
+SET status = 'inactive'
+WHERE status = 'nonactive';
+
+CREATE TYPE new_status_setting AS ENUM ('active', 'inactive');
+
+ALTER TABLE users
+    ALTER COLUMN status DROP DEFAULT;
+
+	ALTER TABLE users
+    ALTER COLUMN status SET DATA TYPE new_status_setting
+    USING status::text::new_status_setting;
+
+

@@ -213,6 +213,8 @@ def signup():
         environmental_interests = request.form['environmental_interests']
         uploaded_profile_image = request.files.get('profile_image')
         profile_image, profile_image_upload_error = upload_profile_image(uploaded_profile_image)
+        if not profile_image and not profile_image_upload_error:
+            profile_image = get_default_profile_image_filename()
 
            
 
@@ -394,6 +396,13 @@ def profile():
         profile = cursor.fetchone()
 
     default_profile_image = get_default_profile_image_filename()
+    if not profile.get('profile_image'):
+        profile['profile_image'] = default_profile_image
+        with db.get_cursor() as cursor:
+            cursor.execute(
+                'UPDATE users SET profile_image = %s WHERE user_id = %s;',
+                (default_profile_image, session['user_id'])
+            )
 
     # handle form submission
     if request.method == 'POST':
@@ -414,16 +423,16 @@ def profile():
         # delete current image (revert to default display image)
         if delete_profile_image_requested:
             delete_uploaded_profile_image(profile.get('profile_image'))
-            profile_image = None
+            profile_image = default_profile_image
             with db.get_cursor() as cursor:
                 cursor.execute('''
                     UPDATE users
                     SET profile_image = %s
                     WHERE user_id = %s;
-                ''', (None, session['user_id']))
+                ''', (default_profile_image, session['user_id']))
 
             profile_updated = True
-            profile['profile_image'] = None
+            profile['profile_image'] = default_profile_image
 
         # upload new image
         elif uploaded_profile_image and uploaded_profile_image.filename:

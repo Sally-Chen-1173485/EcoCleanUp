@@ -35,6 +35,7 @@
                                 <th>Location</th>
                                 <th>Type</th>
                                 <th>Status</th>
+                                <th>Feedback</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -57,12 +58,14 @@
                                         <span class="badge bg-secondary">Pending</span>
                                     {% endif %}
                                 </td>
-                            </tr>
-                            {% if record.rating %}
-                            <tr class="table-light">
-                                <td colspan="5">
-                                    <small>
-                                        <strong>Feedback:</strong>
+                                <td>
+                                    {% if record.rating is not none %}
+                                    <button
+                                        type="button"
+                                        class="btn btn-link p-0 text-decoration-none"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#feedbackModal{{ record.event_id }}"
+                                        title="View feedback">
                                         {% for i in range(1, 6) %}
                                             {% if i <= record.rating %}
                                                 <span class="text-warning">⭐</span>
@@ -70,15 +73,49 @@
                                                 <span class="text-muted">☆</span>
                                             {% endif %}
                                         {% endfor %}
-                                        ({{ record.rating }}/5) - {{ record.comments }}
-                                    </small>
+                                        <span class="text-dark">({{ record.rating }}/5)</span>
+                                    </button>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
                                 </td>
                             </tr>
-                            {% endif %}
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
+
+                {% for record in events %}
+                    {% if record.rating is not none %}
+                    <div class="modal fade" id="feedbackModal{{ record.event_id }}" tabindex="-1" aria-labelledby="feedbackModalLabel{{ record.event_id }}" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="feedbackModalLabel{{ record.event_id }}">Feedback - {{ record.event_name }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="mb-2">
+                                        <strong>Rating:</strong>
+                                        {% for i in range(1, 6) %}
+                                            {% if i <= record.rating %}
+                                                <span class="text-warning">⭐</span>
+                                            {% else %}
+                                                <span class="text-muted">☆</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                        ({{ record.rating }}/5)
+                                    </p>
+                                    <p class="mb-0"><strong>Comment:</strong> {{ record.comments or 'No comment provided.' }}</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
             {% else %}
                 <div class="alert alert-info">No participation history available for this volunteer.</div>
             {% endif %}

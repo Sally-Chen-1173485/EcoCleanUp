@@ -28,9 +28,10 @@
                 <form method="post" class="needs-validation" novalidate
                       action="{% if mode=='create' %}{{ url_for('create_event') }}{% else %}{{ url_for('edit_event', event_id=event.event_id) }}{% endif %}">
                     <div class="mb-3">
-                        <div class="form-text text-secondary font-monospace badge bg-info-subtle mt-3 mb-2">
+                        <div class="form-text text-secondary font-monospace d-block bg-info-subtle mt-3 mb-2">
                             Event name should be concise (max 100 characters).
                         </div>
+
                         <label for="event_name" class="form-label">Event Name</label>
                         <input type="text" class="form-control" id="event_name" name="event_name"
                                maxlength="100" required
@@ -40,9 +41,10 @@
                         {% endif %}
                     </div>
                     <div class="mb-3">
-                        <div class="form-text text-secondary font-monospace badge bg-info-subtle mt-3 mb-2">
+                        <div class="form-text text-secondary font-monospace d-block bg-info-subtle mt-3 mb-2 p-1 rounded">
                             Provide the location (max 255 characters).
                         </div>
+                        
                         <label for="location" class="form-label">Location</label>
                         <input type="text" class="form-control" id="location" name="location"
                                maxlength="255" required
@@ -52,7 +54,7 @@
                         {% endif %}
                     </div>
                     <div class="mb-3">
-                        <div class="form-text text-secondary font-monospace badge bg-info-subtle mt-3 mb-2">
+                        <div class="form-text text-secondary font-monospace d-block bg-info-subtle mt-3 mb-2">
                             Choose a type (max 50 characters).
                         </div>
                         <label for="event_type" class="form-label">Event Type</label>
@@ -64,11 +66,11 @@
                         {% endif %}
                     </div>
                     <div class="mb-3">
-                        <div class="form-text text-secondary font-monospace badge bg-info-subtle mt-3 mb-2">
+                        <div class="form-text text-secondary font-monospace d-block bg-info-subtle mt-3 mb-2">
                             Select a date (cannot be in the past).
                         </div>
                         <label for="event_date" class="form-label">Event Date</label>
-                        <input type="date" class="form-control" id="event_date" name="event_date" required
+                           <input type="date" class="form-control" id="event_date" name="event_date" {% if mode=='create' %}min="{{ today_iso }}"{% endif %} required
                                value="{{ event.event_date.strftime('%Y-%m-%d') if event and mode=='edit' else '' }}">
                         {% if errors.get('event_date') %}
                         <div class="text-danger small mt-1">{{ errors['event_date'] }}</div>
@@ -115,7 +117,7 @@
 
                 <div class="mb-4">
                     <div class="btn-group w-100 flex-wrap" role="group">
-                        <a href="{{ url_for('manage_attendance', event_id=event.event_id) }}" class="btn btn-outline-primary">Track Attendance</a>
+                        <a href="{{ url_for('manage_attendance', event_id=event.event_id) }}" class="btn btn-outline-primary">Attendance</a>
                         <a href="{{ url_for('record_outcome', event_id=event.event_id) }}" class="btn btn-outline-success">Record Outcome</a>
                         <a href="{{ url_for('send_reminder', event_id=event.event_id) }}" class="btn btn-outline-info" onclick="return confirm('Send reminder to all registered volunteers?')">Send Reminder</a>
                         <a href="{{ url_for('view_feedbacks', event_id=event.event_id) }}" class="btn btn-outline-secondary">View Feedbacks</a>
@@ -216,6 +218,7 @@
 <script>
     (function () {
         'use strict'
+
         var forms = document.querySelectorAll('.needs-validation')
         Array.prototype.slice.call(forms).forEach(function (form) {
             form.addEventListener('submit', function (event) {

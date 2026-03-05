@@ -18,7 +18,7 @@ customer1 | customer1pass | $2b$12$3MKcEpWwiXM7ocpSXQOYeeBqnrOFHYZQti1sebnXP.l9C
 customer2 | customer2pass | $2b$12$FbZkr80qHYTzLCjFP3//4.R7.iCQyHRW1zbwde8xd36bN4KqbuLvu | True
 staff1 | staff1pass | $2b$12$2yha6il4/AHIuw3fe9F6oet8tlcX3kvOEtMHqzqSaGHZplqS6UnRO | True
 staff2 | staff2pass | $2b$12$lMLo.6Ka5oxiEfKiUzvkR.w2PVBGEXSU2Dx90RfXE7u.EMXd5gmGK | True
-admin1 | admin1pass | $2b$12$7xzrCLlkpCq4ybjdrVJIM.H56.cnc/BJb87p4aA4usVZBpdMgdm4G | True
+admin1 | admin1pass_!Q | $2b$12$7xzrCLlkpCq4ybjdrVJIM.H56.cnc/BJb87p4aA4usVZBpdMgdm4G | True
 admin2 | admin2pass | $2b$12$/6RyLblwDYrqt8o12lib/Ou3yxc4bdxoAo4i7aRG0OSNMMAcgKley | True
 alice_williams | alice_williams_pass | $2b$12$ikKJW9sJe7uqaJZ8FOhCv.dutXDHZVUXxvJnYrTviM6ZEXzwiSy4K | True
 bob_smith | bob_smith_pass | $2b$12$I4i1Y3DUjZyu98pIewXL0eAdNgJaz77TsjJgFJ.zCpbyLGA83X8z2 | True

@@ -1,6 +1,7 @@
 from loginapp import app
 from loginapp import db
 from flask import redirect, render_template, session, url_for, request, flash
+from datetime import date
 
 # reuse Event Leader's views for event management
 from loginapp.staff import (
@@ -84,10 +85,43 @@ def admin_events():
             return redirect(url_for('login'))
         return render_template('access_denied.html'), 403
 
+    date_from = request.args.get('date_from', '')
+    date_to = request.args.get('date_to', '')
+    location = request.args.get('location', '')
+    evtype = request.args.get('event_type', '')
+
+    query = 'SELECT * FROM events WHERE event_date >= %s'
+    params = [date.today()]
+    if date_from:
+        query += ' AND event_date >= %s'
+        params.append(date_from)
+    if date_to:
+        query += ' AND event_date <= %s'
+        params.append(date_to)
+    if location:
+        query += ' AND location_ ILIKE %s'
+        params.append(f"%{location}%")
+    if evtype:
+        query += ' AND event_type ILIKE %s'
+        params.append(evtype)
+    query += ' ORDER BY event_date ASC'
+
     with db.get_cursor() as cursor:
-        cursor.execute('SELECT * FROM events ORDER BY event_date ASC;')
-        events = cursor.fetchall()
-    return render_template('staff_home.html', events=events)
+        cursor.execute(query, tuple(params))
+        upcoming_events = cursor.fetchall()
+
+    return render_template(
+        'customer_home.html',
+        upcoming_events=upcoming_events,
+        registered_ids=set(),
+        past_events=[],
+        reminder_events=[],
+        date_from=date_from,
+        date_to=date_to,
+        location=location,
+        event_type=evtype,
+        past_scope='all'
+    )
 
 
 @app.route('/admin/event/<int:event_id>')
@@ -171,17 +205,49 @@ def admin_users():
         return render_template('access_denied.html'), 403
 
     q = request.args.get('q', '').strip()
+    role_filter = request.args.get('role', '').strip()
+    status_filter = request.args.get('status', '').strip()
+
+    valid_roles = ('Volunteers', 'Event Leaders', 'Administrators')
+    valid_statuses = ('active', 'nonactive', 'banned', 'suspended')
+
+    if role_filter not in valid_roles:
+        role_filter = ''
+    if status_filter not in valid_statuses:
+        status_filter = ''
+
     with db.get_cursor() as cursor:
+        query = 'SELECT * FROM users WHERE 1=1'
+        params = []
+
         if q:
             pattern = f"%{q}%"
-            cursor.execute(
-                "SELECT * FROM users WHERE username ILIKE %s OR full_name ILIKE %s OR email ILIKE %s OR role ILIKE %s ORDER BY username;",
-                (pattern, pattern, pattern, pattern)
+            query += (
+                ' AND ('
+                'username ILIKE %s OR COALESCE(full_name, \'\') ILIKE %s OR email ILIKE %s '
+                'OR role::text ILIKE %s OR status::text ILIKE %s'
+                ')'
             )
-        else:
-            cursor.execute('SELECT * FROM users ORDER BY username;')
+            params.extend([pattern, pattern, pattern, pattern, pattern])
+
+        if role_filter:
+            query += ' AND role = %s'
+            params.append(role_filter)
+
+        if status_filter:
+            query += ' AND status = %s'
+            params.append(status_filter)
+
+        query += ' ORDER BY username;'
+        cursor.execute(query, tuple(params))
         users = cursor.fetchall()
-    return render_template('admin_users.html', users=users, q=q)
+    return render_template(
+        'admin_users.html',
+        users=users,
+        q=q,
+        role_filter=role_filter,
+        status_filter=status_filter
+    )
 
 
 @app.route('/admin/users/<int:user_id>/status', methods=['POST'])

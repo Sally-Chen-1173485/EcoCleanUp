@@ -9,11 +9,25 @@
 <section class="container py-5">
     <div class="row justify-content-center text-center">
         <div class="col-lg-7">
-            <h1>Volunteer Home</h1>
-          <p class="lead text-muted">Browse the event list, register to participate, and review past activities.</p>
+      {% if session['role'] == 'Volunteers' %}
+      <h1>Volunteer Home</h1>
+      <p class="lead text-muted">Browse the event list, register to participate, and review past activities.</p>
+      {% elif session['role'] == 'Event Leaders' %}
+      <h1>Event Leader Home</h1>
+      <p class="lead text-muted">Browse all upcoming events with the same filter view.</p>
+      {% else %}
+      <h1>Administrators Event List</h1>
+      <p class="lead text-muted">Browse all upcoming events with the same filter view.</p>
+      {% endif %}
         </div>
     </div>
 </section>
+
+{% if session['role'] == 'Event Leaders' %}
+<section class="container mb-4">
+  <a href="{{ url_for('create_event') }}" class="btn btn-primary">+ Create New Event</a>
+</section>
+{% endif %}
 
 <!-- Flash messages such as registration/feedback confirmation -->
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -29,29 +43,32 @@
   {% endif %}
 {% endwith %}
 
-{% if reminder_events and reminder_events|length > 0 %}
+{% if session['role'] == 'Volunteers' and reminder_notifications and reminder_notifications|length > 0 %}
 <div class="modal fade" id="eventReminderModal" tabindex="-1" aria-labelledby="eventReminderModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="eventReminderModalLabel">Your Event Reminders</h5>
+        <h5 class="modal-title" id="eventReminderModalLabel">New Event Reminder{% if reminder_notifications|length > 1 %}s{% endif %}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <p class="mb-3">You are registered for the following upcoming event(s):</p>
+        <p class="mb-3">Event leader{% if reminder_notifications|length > 1 %}s{% endif %} sent the following reminder{% if reminder_notifications|length > 1 %}s{% endif %}:</p>
         <div class="table-responsive">
           <table class="table table-sm align-middle mb-0">
             <thead>
               <tr>
+                <th>Sent</th>
                 <th>Date</th>
                 <th>Event</th>
                 <th>Time</th>
                 <th>Location</th>
+                <th>Message</th>
               </tr>
             </thead>
             <tbody>
-              {% for ev in reminder_events %}
+              {% for ev in reminder_notifications %}
               <tr>
+                <td>{{ ev.sent_at.strftime('%Y-%m-%d %H:%M') }}</td>
                 <td>{{ ev.event_date.strftime('%Y-%m-%d') }}</td>
                 <td><a href="{{ url_for('customer_event_detail', event_id=ev.event_id) }}">{{ ev.event_name }}</a></td>
                 <td>
@@ -62,6 +79,7 @@
                   {% endif %}
                 </td>
                 <td>{{ ev.location_ }}</td>
+                <td>{{ ev.message or 'Event reminder' }}</td>
               </tr>
               {% endfor %}
             </tbody>
@@ -134,13 +152,27 @@
           <td>{{ ev.location_ }}</td>
           <td>{{ ev.event_type }}</td>
           <td>
-            {% if ev.event_id in registered_ids %}
-              <span class="text-success">Registered</span>
+            {% if session['role'] == 'Volunteers' %}
+              {% if ev.event_id in registered_ids %}
+                <span class="text-success">Registered</span>
+              {% else %}
+                <form method="post" class="d-inline">
+                  <input type="hidden" name="event_id" value="{{ ev.event_id }}">
+                  <button type="submit" name="register_event" class="btn btn-sm btn-primary">Register</button>
+                </form>
+              {% endif %}
+            {% elif session['role'] == 'Event Leaders' %}
+              {% if ev.event_leader_id == session['user_id'] %}
+                <a href="{{ url_for('event_detail', event_id=ev.event_id) }}" class="btn btn-sm btn-info">Manage</a>
+                <a href="{{ url_for('edit_event', event_id=ev.event_id) }}" class="btn btn-sm btn-warning">Edit</a>
+                <form method="post" action="{{ url_for('cancel_event', event_id=ev.event_id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this event?');">
+                  <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
+                </form>
+              {% else %}
+                <span class="text-muted">-</span>
+              {% endif %}
             {% else %}
-              <form method="post" class="d-inline">
-                <input type="hidden" name="event_id" value="{{ ev.event_id }}">
-                <button type="submit" name="register_event" class="btn btn-sm btn-primary">Register</button>
-              </form>
+              <a href="{{ url_for('admin_event_detail', event_id=ev.event_id) }}" class="btn btn-sm btn-info">View</a>
             {% endif %}
           </td>
         </tr>
@@ -154,6 +186,7 @@
 </section>
 
 <!-- Past events and feedback -->
+{% if session['role'] == 'Volunteers' %}
 <section class="container mt-5">
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h2 class="mb-0">Past Events</h2>
@@ -205,4 +238,5 @@
     <p class="text-muted">No past events found.</p>
   {% endif %}
 </section>
+{% endif %}
 {% endblock %}

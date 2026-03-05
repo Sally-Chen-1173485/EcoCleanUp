@@ -9,7 +9,7 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <h1>{{ event.event_name }}</h1>
-            <p class="text-muted">Organized by Event Leader</p>
+            <p class="text-muted">Organized by {{ event.leader_name or event.leader_username or 'Event Leader' }}</p>
         </div>
     </div>
 </section>
@@ -54,7 +54,9 @@
                 <div class="btn-group w-100 flex-wrap" role="group">
                     <a href="{{ manage_attendance_url }}" class="btn btn-outline-primary">Track Attendance</a>
                     <a href="{{ record_outcome_url }}" class="btn btn-outline-success">Record Outcome</a>
-                    <a href="{{ send_reminder_url }}" class="btn btn-outline-info" onclick="return confirm('Send reminder to all registered volunteers?')">Send Reminder</a>
+                    <form method="post" action="{{ send_reminder_url }}" style="display: inline;" onsubmit="return confirm('Send reminder to all registered volunteers?')">
+                        <button type="submit" class="btn btn-outline-info">Send Reminder</button>
+                    </form>
                     <a href="{{ view_feedbacks_url }}" class="btn btn-outline-secondary">View Feedbacks</a>
                 </div>
             </div>

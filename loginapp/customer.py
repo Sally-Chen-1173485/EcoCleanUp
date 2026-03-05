@@ -161,10 +161,10 @@ def customer_home():
           query += ' AND event_date <= %s'
           params.append(date_to)
      if location:
-          query += ' AND location_ LIKE %s'
+          query += ' AND location_ ILIKE %s'
           params.append(f"%{location}%")
      if evtype:
-          query += ' AND event_type = %s'
+          query += ' AND event_type ILIKE %s'
           params.append(evtype)
      query += ' ORDER BY event_date ASC'
 
@@ -212,12 +212,36 @@ def customer_home():
           )
           reminder_events = cursor.fetchall()
 
+          cursor.execute(
+               '''
+               SELECT t3.registration_id AS reminder_id,
+                      t3.reminder_message AS message,
+                      t3.reminder_sent_at AS sent_at,
+                      t4.event_id, t4.event_name, t4.event_date, t4.start_time, t4.end_time, t4.location_
+               FROM eventregistrations t3
+                                    JOIN events t4 ON t3.event_id = t4.event_id
+               WHERE t3.volunteer_id = %s
+                 AND t3.reminder_pending = TRUE
+               ORDER BY t3.reminder_sent_at DESC NULLS LAST;
+               ''',
+               (user_id,)
+          )
+          reminder_notifications = cursor.fetchall()
+
+          if reminder_notifications:
+               reminder_ids = [n['reminder_id'] for n in reminder_notifications]
+               cursor.execute(
+                    'UPDATE eventregistrations SET reminder_pending = FALSE WHERE registration_id = ANY(%s);',
+                    (reminder_ids,)
+               )
+
      return render_template(
           'customer_home.html',
           upcoming_events=upcoming_events,
           registered_ids=registered_ids,
           past_events=past_events,
           reminder_events=reminder_events,
+          reminder_notifications=reminder_notifications,
           date_from=date_from,
           date_to=date_to,
           location=location,
@@ -228,12 +252,14 @@ def customer_home():
 
 @app.route('/customer/event/<int:event_id>')
 def customer_event_detail(event_id):
-     """Volunteer-facing event detail page with registration status/actions."""
-     guard_response = _ensure_volunteer_logged_in()
-     if guard_response is not None:
-          return guard_response
+     """Shared event detail page for volunteers, event leaders and admins."""
+     if 'loggedin' not in session:
+          return redirect(url_for('login'))
+     if session.get('role') not in ('Volunteers', 'Event Leaders', 'Administrators'):
+          return render_template('access_denied.html'), 403
 
      user_id = session['user_id']
+     is_volunteer = session.get('role') == 'Volunteers'
      with db.get_cursor() as cursor:
           cursor.execute('''
                SELECT t4.*, t1.full_name AS leader_name
@@ -247,12 +273,22 @@ def customer_event_detail(event_id):
                flash('Event not found.', 'danger')
                return redirect(url_for('customer_home'))
 
-          cursor.execute('''
-               SELECT registration_id
-               FROM eventregistrations
-               WHERE event_id = %s AND volunteer_id = %s;
-          ''', (event_id, user_id))
-          is_registered = cursor.fetchone() is not None
+          if is_volunteer:
+               cursor.execute('''
+                    SELECT registration_id
+                    FROM eventregistrations
+                    WHERE event_id = %s AND volunteer_id = %s;
+               ''', (event_id, user_id))
+               is_registered = cursor.fetchone() is not None
+          else:
+               is_registered = False
+
+     if session['role'] == 'Event Leaders':
+          back_url = url_for('staff_home')
+     elif session['role'] == 'Administrators':
+          back_url = url_for('admin_events')
+     else:
+          back_url = url_for('customer_home')
 
      return render_template(
           'event_detail.html',
@@ -263,7 +299,7 @@ def customer_event_detail(event_id):
           can_manage_event=False,
           is_registered=is_registered,
           deregister_url=url_for('customer_deregister_event', event_id=event_id),
-          back_url=url_for('customer_home'),
+          back_url=back_url,
           back_label='Back to Event List',
           now=datetime.now()
      )
