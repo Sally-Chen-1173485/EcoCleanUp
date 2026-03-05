@@ -143,7 +143,7 @@ ALTER TABLE events
 
 
 
-
+---change to table columns to align with requirement
 ALTER TYPE status_setting ADD VALUE 'inactive';
 
 UPDATE users

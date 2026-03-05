@@ -214,21 +214,34 @@ def customer_home():
 
           cursor.execute(
                '''
-               SELECT t3.registration_id AS reminder_id,
-                      t3.reminder_message AS message,
-                      t3.reminder_sent_at AS sent_at,
-                      t4.event_id, t4.event_name, t4.event_date, t4.start_time, t4.end_time, t4.location_
-               FROM eventregistrations t3
-                                    JOIN events t4 ON t3.event_id = t4.event_id
-               WHERE t3.volunteer_id = %s
-                 AND t3.reminder_pending = TRUE
-               ORDER BY t3.reminder_sent_at DESC NULLS LAST;
-               ''',
-               (user_id,)
+               SELECT COUNT(*) AS cnt
+               FROM information_schema.columns
+               WHERE table_schema = current_schema()
+                 AND table_name = 'eventregistrations'
+                 AND column_name IN ('reminder_pending', 'reminder_sent_at', 'reminder_message');
+               '''
           )
-          reminder_notifications = cursor.fetchall()
+          reminder_columns_ready = cursor.fetchone()['cnt'] == 3
 
-          if reminder_notifications:
+          reminder_notifications = []
+          if reminder_columns_ready:
+               cursor.execute(
+                    '''
+                    SELECT t3.registration_id AS reminder_id,
+                           t3.reminder_message AS message,
+                           t3.reminder_sent_at AS sent_at,
+                           t4.event_id, t4.event_name, t4.event_date, t4.start_time, t4.end_time, t4.location_
+                    FROM eventregistrations t3
+                    JOIN events t4 ON t3.event_id = t4.event_id
+                    WHERE t3.volunteer_id = %s
+                      AND t3.reminder_pending = TRUE
+                    ORDER BY t3.reminder_sent_at DESC NULLS LAST;
+                    ''',
+                    (user_id,)
+               )
+               reminder_notifications = cursor.fetchall()
+
+          if reminder_columns_ready and reminder_notifications:
                reminder_ids = [n['reminder_id'] for n in reminder_notifications]
                cursor.execute(
                     'UPDATE eventregistrations SET reminder_pending = FALSE WHERE registration_id = ANY(%s);',

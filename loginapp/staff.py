@@ -541,6 +541,8 @@ def send_reminder(event_id):
 
      user_id = session['user_id']
      is_admin = session['role'] == 'Administrators'
+     volunteers = []
+     reminder_columns_ready = False
 
      with db.get_cursor() as cursor:
           if is_admin:
@@ -562,7 +564,18 @@ def send_reminder(event_id):
               (event_id,))
           volunteers = cursor.fetchall()
 
-          if volunteers:
+          cursor.execute(
+              '''
+              SELECT COUNT(*) AS cnt
+              FROM information_schema.columns
+              WHERE table_schema = current_schema()
+                AND table_name = 'eventregistrations'
+                AND column_name IN ('reminder_pending', 'reminder_sent_at', 'reminder_message');
+              '''
+          )
+          reminder_columns_ready = cursor.fetchone()['cnt'] == 3
+
+          if volunteers and reminder_columns_ready:
                reminder_message = f"Reminder: {event['event_name']} is coming up on {event['event_date'].strftime('%Y-%m-%d')}."
                cursor.execute(
                     '''
@@ -575,8 +588,10 @@ def send_reminder(event_id):
                     (reminder_message, event_id)
                )
 
-     if volunteers:
+     if volunteers and reminder_columns_ready:
           flash(f'Reminder sent to {len(volunteers)} volunteer(s) for {event["event_name"]}.', 'success')
+     elif volunteers:
+          flash('Registered volunteers found, but reminder columns are missing in database. Please update schema to enable popup reminders.', 'warning')
      else:
           flash('No registered volunteers to send reminder to.', 'info')
 

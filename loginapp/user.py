@@ -415,7 +415,9 @@ def profile():
         uploaded_profile_image = request.files.get('profile_image_file')
         delete_profile_image_requested = request.form.get('delete_profile_image') == '1'
         image_upload_only = request.form.get('image_upload_only') == '1'
+
         # password change fields (may be blank if user isn't changing)
+
         current_password = request.form.get('current_password', '').strip()
         new_password = request.form.get('new_password', '').strip()
         confirm_password = request.form.get('confirm_password', '').strip()
@@ -493,7 +495,18 @@ def profile():
                 new_password_error = 'New password must be at least 8 characters.'
             if new_password and new_password != confirm_password:
                 confirm_password_error = 'Passwords do not match.'
+            if current_password and new_password and new_password == current_password:
+                new_password_error = 'New password must be different from current password.'
+            if new_password and flask_bcrypt.check_password_hash(profile['password_hash'], new_password):
+                new_password_error = 'New password must be different from current password.'
 
+        if new_password and not new_password_error:
+            with db.get_cursor() as cursor:
+                cursor.execute('SELECT password_hash FROM users WHERE user_id = %s;', (session['user_id'],))
+                latest_password_hash = cursor.fetchone()['password_hash']
+            if flask_bcrypt.check_password_hash(latest_password_hash, new_password):
+                new_password_error = 'New password must be different from current password.'
+           
         # if there are no errors, write values back to the database
         if not (full_name_error or home_address_error or contact_number_error or
                 env_interest_error or profile_image_error or
@@ -513,7 +526,7 @@ def profile():
                       session['user_id']))
 
                 # if password change requested, hash and update
-                if new_password:
+                if new_password and not new_password_error:
                     new_hash = flask_bcrypt.generate_password_hash(new_password).decode('utf-8')
                     cursor.execute('''
                         UPDATE users
