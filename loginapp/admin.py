@@ -269,38 +269,83 @@ def admin_update_status(user_id):
 
 @app.route('/admin/reports')
 def admin_reports():
-    if not check_admin():
-        if 'loggedin' not in session:
-            return redirect(url_for('login'))
+    if 'loggedin' not in session:
+        return redirect(url_for('login'))
+    if session.get('role') not in ('Event Leaders', 'Administrators'):
         return render_template('access_denied.html'), 403
 
+    is_admin = session.get('role') == 'Administrators'
+    user_id = session.get('user_id')
+
     with db.get_cursor() as cursor:
-        cursor.execute('SELECT COUNT(*) FROM events;')
-        total_events = cursor.fetchone()['count']
-        cursor.execute("SELECT COUNT(*) FROM users WHERE role='Volunteers';")
-        total_volunteers = cursor.fetchone()['count']
-        cursor.execute("SELECT COUNT(*) FROM users WHERE role='Event Leaders';")
-        total_leaders = cursor.fetchone()['count']
-        cursor.execute('SELECT COUNT(*) FROM feedback;')
-        total_feedbacks = cursor.fetchone()['count']
-        cursor.execute('SELECT AVG(rating) FROM feedback;')
-        avg_rating = cursor.fetchone()['avg'] or 0
-        cursor.execute('SELECT attendance, COUNT(*) AS cnt FROM eventregistrations GROUP BY attendance;')
-        attendance_counts = cursor.fetchall()
+        if is_admin:
+            cursor.execute('SELECT COUNT(*) FROM events;')
+            total_events = cursor.fetchone()['count']
+            cursor.execute("SELECT COUNT(*) FROM users WHERE role='Volunteers';")
+            total_volunteers = cursor.fetchone()['count']
+            cursor.execute("SELECT COUNT(*) FROM users WHERE role='Event Leaders';")
+            total_leaders = cursor.fetchone()['count']
+            cursor.execute('SELECT COUNT(*) FROM feedback;')
+            total_feedbacks = cursor.fetchone()['count']
+            cursor.execute('SELECT AVG(rating) FROM feedback;')
+            avg_rating = cursor.fetchone()['avg'] or 0
+            cursor.execute('SELECT attendance, COUNT(*) AS cnt FROM eventregistrations GROUP BY attendance;')
+            attendance_counts = cursor.fetchall()
+            cursor.execute(
+                'SELECT t1.user_id, t1.full_name, COUNT(*) AS reg_count '
+                'FROM eventregistrations t3 '
+                'JOIN users t1 ON t3.volunteer_id = t1.user_id '
+                'GROUP BY t1.user_id, t1.full_name '
+                'ORDER BY reg_count DESC;'
+            )
+            engagement = cursor.fetchall()
+
+            return render_template(
+                'admin_reports.html',
+                is_admin=True,
+                total_events=total_events,
+                total_volunteers=total_volunteers,
+                total_leaders=total_leaders,
+                total_feedbacks=total_feedbacks,
+                avg_rating=avg_rating,
+                attendance_counts=attendance_counts,
+                engagement=engagement,
+                leader_event_reports=[]
+            )
+
         cursor.execute(
-            'SELECT t1.user_id, t1.full_name, COUNT(*) AS reg_count '
-            'FROM eventregistrations t3 '
-            'JOIN users t1 ON t3.volunteer_id = t1.user_id '
-            'GROUP BY t1.user_id, t1.full_name '
-            'ORDER BY reg_count DESC;'
+            '''
+            SELECT e.event_id,
+                   e.event_name,
+                   e.event_date,
+                   e.location_,
+                   COALESCE(out.num_attendees, 0) AS num_attendees,
+                   COALESCE(reg.reg_count, 0) AS registered_count,
+                   COALESCE(fb.feedback_count, 0) AS feedback_count,
+                   COALESCE(fb.avg_rating, 0) AS avg_rating
+            FROM events e
+            LEFT JOIN eventoutcomes out ON out.event_id = e.event_id
+            LEFT JOIN (
+                SELECT event_id, COUNT(*) AS reg_count
+                FROM eventregistrations
+                GROUP BY event_id
+            ) reg ON reg.event_id = e.event_id
+            LEFT JOIN (
+                SELECT event_id, COUNT(*) AS feedback_count, AVG(rating) AS avg_rating
+                FROM feedback
+                GROUP BY event_id
+            ) fb ON fb.event_id = e.event_id
+            WHERE e.event_leader_id = %s
+            ORDER BY e.event_date DESC;
+            ''',
+            (user_id,)
         )
-        engagement = cursor.fetchall()
-    return render_template('admin_reports.html', total_events=total_events,
-                           total_volunteers=total_volunteers,
-                           total_leaders=total_leaders,
-                           total_feedbacks=total_feedbacks,
-                           avg_rating=avg_rating,
-                           attendance_counts=attendance_counts,
-                           engagement=engagement)
+        leader_event_reports = cursor.fetchall()
+
+    return render_template(
+        'admin_reports.html',
+        is_admin=False,
+        leader_event_reports=leader_event_reports
+    )
 
 

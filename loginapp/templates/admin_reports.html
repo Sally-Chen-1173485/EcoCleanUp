@@ -8,7 +8,8 @@
 <section class="container py-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            <h1>Overall Reports</h1>
+            <h1>{% if is_admin %}Overall Reports{% else %}My Event Reports{% endif %}</h1>
+            {% if is_admin %}
             <div class="card mb-4">
                 <div class="card-body">
                     <ul>
@@ -54,6 +55,40 @@
             </div>
             {% else %}
             <p class="text-muted">No engagement data available.</p>
+            {% endif %}
+            {% else %}
+            {% if leader_event_reports %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Event</th>
+                            <th>Location</th>
+                            <th>Registered</th>
+                            <th>Attendees</th>
+                            <th>Feedbacks</th>
+                            <th>Avg Rating</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in leader_event_reports %}
+                        <tr>
+                            <td>{{ row.event_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ row.event_name }}</td>
+                            <td>{{ row.location_ }}</td>
+                            <td>{{ row.registered_count }}</td>
+                            <td>{{ row.num_attendees }}</td>
+                            <td>{{ row.feedback_count }}</td>
+                            <td>{{ '%.2f'|format(row.avg_rating) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No event reports available yet.</p>
+            {% endif %}
             {% endif %}
         </div>
     </div>

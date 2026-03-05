@@ -27,6 +27,54 @@ def check_leader_or_admin():
           return False
      return session['role'] in ('Event Leaders', 'Administrators')
 
+@app.route('/staff/reports')
+def staff_reports():
+     """Event leader report page (leader-specific events only)."""
+     if 'loggedin' not in session:
+          return redirect(url_for('login'))
+     if session.get('role') not in ('Event Leaders', 'Administrators'):
+          return render_template('access_denied.html'), 403
+
+     if session.get('role') == 'Administrators':
+          return redirect(url_for('admin_reports'))
+
+     user_id = session.get('user_id')
+     with db.get_cursor() as cursor:
+          cursor.execute(
+              '''
+              SELECT e.event_id,
+                     e.event_name,
+                     e.event_date,
+                     e.location_,
+                     COALESCE(out.num_attendees, 0) AS num_attendees,
+                     COALESCE(reg.reg_count, 0) AS registered_count,
+                     COALESCE(fb.feedback_count, 0) AS feedback_count,
+                     COALESCE(fb.avg_rating, 0) AS avg_rating
+              FROM events e
+              LEFT JOIN eventoutcomes out ON out.event_id = e.event_id
+              LEFT JOIN (
+                  SELECT event_id, COUNT(*) AS reg_count
+                  FROM eventregistrations
+                  GROUP BY event_id
+              ) reg ON reg.event_id = e.event_id
+              LEFT JOIN (
+                  SELECT event_id, COUNT(*) AS feedback_count, AVG(rating) AS avg_rating
+                  FROM feedback
+                  GROUP BY event_id
+              ) fb ON fb.event_id = e.event_id
+              WHERE e.event_leader_id = %s
+              ORDER BY e.event_date DESC;
+              ''',
+              (user_id,)
+          )
+          leader_event_reports = cursor.fetchall()
+
+     return render_template(
+          'admin_reports.html',
+          is_admin=False,
+          leader_event_reports=leader_event_reports
+     )
+
 @app.route('/staff/home')
 def staff_home():
      """Event Leader Homepage - lists their events.
