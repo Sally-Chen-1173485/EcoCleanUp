@@ -178,3 +178,17 @@ VALUES
     ('Park  pickup', 5, 'Ocean Beach', 'Environmental', '2026-02-01'),
     ('Muriwai Clean-up', 4, 'Long Bay', 'Environmental', '2026-03-15'),
     ('Community Recycling Drive', 3, 'Central Park', 'work', '2026-03-5');
+
+
+    INSERT INTO eventregistrations (event_id, volunteer_id, attendance, registered_at)
+VALUES
+    (11, 12, 'Present', '2026-03-0 09:00:00'),
+    (12, 13, 'Late', '2026-03-14 09:30:00'),
+    (13, 15, 'Present', '2026-03-19 10:00:00'),
+    (14, 16, 'Absent', '2026-03-24 11:30:00'),
+    (15, 17, 'No-Show', null),
+	(16, 12, 'Present', '2026-03-09 10:00:00'),
+	(17, 13, 'Present', '2026-03-14 10:30:00'),
+	(18, 15, 'Late', '2026-03-19 11:00:00'),
+	(19, 16, 'Present', '2026-03-24 12:30:00'),
+	(20, 17, 'Excused', null);
