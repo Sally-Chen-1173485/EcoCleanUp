@@ -76,7 +76,7 @@
                         {% for row in all_event_reports %}
                         <tr>
                             <td>{{ row.event_date.strftime('%Y-%m-%d') }}</td>
-                            <td>{{ row.event_name }}</td>
+                            <td><a href="{{ url_for('admin_event_detail', event_id=row.event_id) }}">{{ row.event_name }}</a></td>
                             <td>{{ row.location_ }}</td>
                             <td>{{ row.event_type }}</td>
                             <td>{{ row.leader_name }}</td>
@@ -109,7 +109,7 @@
                         {% for row in leader_event_reports %}
                         <tr>
                             <td>{{ row.event_date.strftime('%Y-%m-%d') }}</td>
-                            <td>{{ row.event_name }}</td>
+                            <td><a href="{{ url_for('event_detail', event_id=row.event_id) }}">{{ row.event_name }}</a></td>
                             <td>{{ row.location_ }}</td>
                             <td>{{ row.registered_count }}</td>
                             <td>{{ row.num_attendees }}</td>

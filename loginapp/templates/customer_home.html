@@ -210,7 +210,7 @@
         <div class="card-body">
           <h5 class="card-title"><a href="{{ url_for('customer_event_detail', event_id=ev.event_id) }}">{{ ev.event_name }}</a> ({{ ev.event_date.strftime('%Y-%m-%d') }})</h5>
           <p class="card-text"><strong>Location:</strong> {{ ev.location_ }}<br>
-             <strong>Type:</strong> {{ ev.event_type }}</p> </
+             <strong>Type:</strong> {{ ev.event_type }}</strong> {{ ev.event_leader }}</p>
           {% if session['role'] == 'Volunteers' %}
           {% if ev.is_registered %}
             {% if ev.rating is not none %}
@@ -236,6 +236,7 @@
             <p class="text-muted mb-0">You did not register for this event. Registration is closed for past events.</p>
           {% endif %}
           {% else %}
+          
             <p class="text-muted mb-0">This event has ended.</p>
           {% endif %}
         </div>
