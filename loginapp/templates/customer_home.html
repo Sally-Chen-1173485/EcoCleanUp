@@ -187,10 +187,11 @@
 </section>
 
 <!-- Past events and feedback -->
-{% if session['role'] == 'Volunteers' %}
+{% if session['role'] in ('Volunteers', 'Event Leaders', 'Administrators') %}
 <section class="container mt-5">
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h2 class="mb-0">Past Events</h2>
+    {% if session['role'] == 'Volunteers' %}
     <div class="btn-group" role="group" aria-label="Past event scope">
       <a href="{{ url_for('customer_home', date_from=date_from, date_to=date_to, location=location, event_type=event_type, past_scope='all') }}"
          class="btn btn-sm {% if past_scope == 'all' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
@@ -201,6 +202,7 @@
         Only my past events
       </a>
     </div>
+    {% endif %}
   </div>
   {% if past_events and past_events|length > 0 %}
     {% for ev in past_events %}
@@ -208,7 +210,8 @@
         <div class="card-body">
           <h5 class="card-title"><a href="{{ url_for('customer_event_detail', event_id=ev.event_id) }}">{{ ev.event_name }}</a> ({{ ev.event_date.strftime('%Y-%m-%d') }})</h5>
           <p class="card-text"><strong>Location:</strong> {{ ev.location_ }}<br>
-             <strong>Type:</strong> {{ ev.event_type }}</p>
+             <strong>Type:</strong> {{ ev.event_type }}</p> </
+          {% if session['role'] == 'Volunteers' %}
           {% if ev.is_registered %}
             {% if ev.rating is not none %}
               <div class="alert alert-info">You rated this event {{ ev.rating }} stars{% if ev.comments %} – "{{ ev.comments }}"{% endif %}.</div>
@@ -231,6 +234,9 @@
             {% endif %}
           {% else %}
             <p class="text-muted mb-0">You did not register for this event. Registration is closed for past events.</p>
+          {% endif %}
+          {% else %}
+            <p class="text-muted mb-0">This event has ended.</p>
           {% endif %}
         </div>
       </div>

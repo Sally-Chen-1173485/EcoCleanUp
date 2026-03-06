@@ -110,11 +110,22 @@ def admin_events():
         cursor.execute(query, tuple(params))
         upcoming_events = cursor.fetchall()
 
+        cursor.execute(
+            '''
+            SELECT *
+            FROM events
+            WHERE event_date < %s
+            ORDER BY event_date DESC;
+            ''',
+            (date.today(),)
+        )
+        past_events = cursor.fetchall()
+
     return render_template(
         'customer_home.html',
         upcoming_events=upcoming_events,
         registered_ids=set(),
-        past_events=[],
+        past_events=past_events,
         reminder_events=[],
         date_from=date_from,
         date_to=date_to,
