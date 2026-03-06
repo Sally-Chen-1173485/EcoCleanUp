@@ -160,3 +160,13 @@ ALTER TABLE users
     USING status::text::new_status_setting;
 
 
+
+-- One-time migration for existing databases that were created
+-- before reminder columns were added to eventregistrations.
+
+ALTER TABLE eventregistrations
+  ADD COLUMN IF NOT EXISTS reminder_pending boolean NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS reminder_sent_at timestamp with time zone,
+  ADD COLUMN IF NOT EXISTS reminder_message text;
+
+
