@@ -31,43 +31,6 @@ Appendix A – Summary of AI use and prompts
 
 
 
-# passwords and hashs
-
-customer1 | customer1pass | $2b$12$3MKcEpWwiXM7ocpSXQOYeeBqnrOFHYZQti1sebnXP.l9CMLaDmVTS | True
-staff1 | staff1pass | $2b$12$2yha6il4/AHIuw3fe9F6oet8tlcX3kvOEtMHqzqSaGHZplqS6UnRO | True
-staff2 | staff2pass | $2b$12$lMLo.6Ka5oxiEfKiUzvkR.w2PVBGEXSU2Dx90RfXE7u.EMXd5gmGK | True
-admin1 | admin1pass | $2b$12$7xzrCLlkpCq4ybjdrVJIM.H56.cnc/BJb87p4aA4usVZBpdMgdm4G | True
-admin2 | admin2pass | $2b$12$/6RyLblwDYrqt8o12lib/Ou3yxc4bdxoAo4i7aRG0OSNMMAcgKley | True
-alice_williams | alice_williams_pass | $2b$12$ikKJW9sJe7uqaJZ8FOhCv.dutXDHZVUXxvJnYrTviM6ZEXzwiSy4K | True
-bob_smith | bob_smith_pass | $2b$12$I4i1Y3DUjZyu98pIewXL0eAdNgJaz77TsjJgFJ.zCpbyLGA83X8z2 | True
-carol_jones | carol_jones_pass | $2b$12$wR2NW9Q/5nyBKruovv14/eYWWlfPRtAwutSzRtfyOtFk9MVxozNgy | True
-david_brown | david_brown_pass | $2b$12$ISpm51UEc2mRrrKDT7iUueJ9EClI2dw4/401r35h4Vsa/VfZFEdda | True
-emma_davis | emma_davis_pass | $2b$12$e7uSOR29FP7mdvRSTjg.gekUqO4lVIKZD30swUzWVzHs/Gb49zqBG | True
-frank_martin | frank_martin_pass | $2b$12$CdFzhYf1.vTx12RgM3cOseEEaAULfF.OGRxScMF6OHAc0kPTeENmS | True
-grace_clark | grace_clark_pass | $2b$12$uid8HO1CyQoncVqUapOB9e2/lOIKfesRin0BRNNhEdtR/tJzOlv9W | True
-hannah_lee | hannah_lee_pass | $2b$12$5RS4UvBNEzc6CZndWcefkeR3euTmY6KrOKxs7RLeavS9LnW6IPkCq | True
-ian_king | ian_king_pass | $2b$12$QdXb9ey4Oadqbup1H8onHuyAYhCYVGq1wSZiHVxQw73XYXG7.puD. | True
-jack_moore | jack_moore_pass | $2b$12$haQu8l/pnQfElXVVIb4nnuBILa0Cg9/VZpaLO76kYcd3KhL2DQvRi | True
-karen_wilson | karen_wilson_pass | $2b$12$Fqe.aEVFCK1Ypib9kKqADeMUbxl03psfRVXOc7jL1TUl9FIFQJ8DK | True
-lucas_taylor | lucas_taylor_pass | $2b$12$bi6SmBAMk70RZ.qPiannQO1NnnP.k1j2afOSRntHRCeEhYi5cmU9S | True
-mona_lee | mona_lee_pass | $2b$12$AeQcAwngIiI22xkKpLTZPeOs6ESjN1URGOy2mCrzootabbYdS/AZK | True
-noah_sanders | noah_sanders_pass | $2b$12$.upL93KmS8OclWq9ZWYM0eo1UrIQAzJHpf1WvL1zSQJyd1nrdG6Sq | True
-olivia_smith | olivia_smith_pass | $2b$12$ER35iZrcW/AYUyIFE81ThOP6wISsR.B2pw2SCmx5QZ1F1TbYm0Qsq | True
-paul_baker | paul_baker_pass | $2b$12$eYDVU8u2/DRm75htoexH1eT.N3cdkVOyIe1oBJUIbrSQay6mSTbPC | True
-queen_carter | queen_carter_pass | $2b$12$1VbsW0./0kZF3U3gACf/u.5HxGJ3Ow1rEnT9kuPSkt63OYBpRLpi6 | True
-yolanda_garcia | yolanda_garcia_pass | $2b$12$pm4FjF.hFZdiMpnVEeKbqOfJPqNUYfrt7x0rxA4UAImEYMjzMD4oW | True
-zachary_lee | zachary_lee_pass | $2b$12$6Pg55nTWngFkyoxmR.hjBOcWGxYt7QmegsffjZlCzRNx1cC/M/oSq | True
-april_walker | april_walker_pass | $2b$12$Gl4v8WDi1535sJIdhK54peKbULVWXnKUuCPuycGbPascrSC2hQnPm | True
-brandon_hall | brandon_hall_pass | $2b$12$IZg/AG5.rVvE4m2aJUqogexmy9kFttI/SFtAzz/cbNBSg8t1Kq4iC | True
-cynthia_king | cynthia_king_pass | $2b$12$5pQft2ZowstzDk8HgLCw1urIrdaO42WI8YHzimooNUXKPLUgg4NCK | True
-derek_wright | derek_wright_pass | $2b$12$wbdF1CjYY9yrCrBTQsI5ceojiZwQJofT4zcw3n5dSVuZR0nVcndby | True
-eric_lopez | eric_lopez_pass | $2b$12$HcZ9xOH0CMx00Y4Dsd9YEe1BhEmrjS9NVOxTmN/AkP94j3qPwcbFu | True
-fiona_green | fiona_green_pass | $2b$12$eZOpyVwMtBWKS7e7aeqjCOw3IPjR9NHfJSiWQfEZdqnpjA24QlNEG | True
-george_adams | george_adams_pass | $2b$12$kEoCPim2900d4clj20V5SO5QdomimlWTBUoMFCSogbzsaLDVKSAIq | True
-hannah_baker | hannah_baker_pass | $2b$12$.yUCfttbujSMJZuwhhrsLOweUx2g9DJ1EpiCIYVYX4aE0m4sRAfCS | True
-ian_nelson | ian_nelson_pass | $2b$12$.oIhu86Hu1emz1EeXUFnfu58BwvryvJyp.MOHLUPUtU7MDZk8UhBe | True
-
-The rest are test data users appear in the database are test data.
 
 
 # EcoCleanUp Web App-developer instructions
