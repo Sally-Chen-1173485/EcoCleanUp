@@ -108,12 +108,13 @@ def admin_manage_attendance(event_id):
         return guard_response
     return leader_manage_attendance(event_id)
 
-#admin view for event outcome, it is blocked now but leave it here for future development 
+#admin view for event outcome, blocked for admins for now
+@app.route('/admin/event/<int:event_id>/outcome', methods=['GET', 'POST'])
 def admin_record_outcome(event_id):
     guard_response = _ensure_admin_logged_in()
     if guard_response is not None:
         return guard_response
-    return leader_record_outcome(event_id)
+    return render_template('access_denied.html'), 403
 
 #admin view for volunteer history, reusing event leader template
 @app.route('/admin/volunteer/<int:volunteer_id>/history')
