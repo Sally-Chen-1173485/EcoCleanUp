@@ -92,6 +92,26 @@
             {% endif %}
             {% else %}
             {% if leader_event_reports %}
+            {% set ns = namespace(total_registered=0, total_attendees=0, total_feedbacks=0, total_rating_points=0) %}
+            {% for row in leader_event_reports %}
+                {% set ns.total_registered = ns.total_registered + (row.registered_count or 0) %}
+                {% set ns.total_attendees = ns.total_attendees + (row.num_attendees or 0) %}
+                {% set ns.total_feedbacks = ns.total_feedbacks + (row.feedback_count or 0) %}
+                {% set ns.total_rating_points = ns.total_rating_points + ((row.avg_rating or 0) * (row.feedback_count or 0)) %}
+            {% endfor %}
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <ul>
+                        <li><strong>Total events:</strong> {{ leader_event_reports|length }}</li>
+                        <li><strong>Total registrations:</strong> {{ ns.total_registered }}</li>
+                        <li><strong>Total attendees:</strong> {{ ns.total_attendees }}</li>
+                        <li><strong>Total feedbacks:</strong> {{ ns.total_feedbacks }}</li>
+                        <li><strong>Average rating:</strong> {{ '%.2f'|format((ns.total_rating_points / ns.total_feedbacks) if ns.total_feedbacks > 0 else 0) }}</li>
+                    </ul>
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead class="table-primary">

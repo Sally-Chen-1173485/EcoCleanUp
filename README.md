@@ -27,6 +27,7 @@ Appendix A – Summary of AI use and prompts
 11. Follow-up prompts (such as why is that? what does these code mean?) were used throughout development to refine AI-generated suggestions and adapt them to the specific structure and requirements of the web application.
 12. please creata a developer instruction for EcoCleanUp Web App
 13. create similar even/user data for this table
+14. in the report page, create similar overview for event leaders so that they can see their events reports.
 
 
 
@@ -238,3 +239,4 @@ If DB gets out of sync after changes:
 5. Restart app.
 
 All files uploaded to github
+https://github.com/Sally-Chen-1173485/EcoCleanUp.git
