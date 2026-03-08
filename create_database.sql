@@ -186,3 +186,5 @@ ALTER TABLE eventregistrations
 DROP TYPE attendance_type;
 
 ALTER TYPE new_attendance_type RENAME TO attendance_type;
+
+

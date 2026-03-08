@@ -40,10 +40,9 @@ Also because the sql script was done incremental, and built upon a template, I h
 # passwords
 
 customer1 | customer1pass | $2b$12$3MKcEpWwiXM7ocpSXQOYeeBqnrOFHYZQti1sebnXP.l9CMLaDmVTS | True
-customer2 | customer2pass | $2b$12$FbZkr80qHYTzLCjFP3//4.R7.iCQyHRW1zbwde8xd36bN4KqbuLvu | True
 staff1 | staff1pass | $2b$12$2yha6il4/AHIuw3fe9F6oet8tlcX3kvOEtMHqzqSaGHZplqS6UnRO | True
 staff2 | staff2pass | $2b$12$lMLo.6Ka5oxiEfKiUzvkR.w2PVBGEXSU2Dx90RfXE7u.EMXd5gmGK | True
-Do not, wrong passwords--admin1 | admin1pass_!Q | $2b$12$7xzrCLlkpCq4ybjdrVJIM.H56.cnc/BJb87p4aA4usVZBpdMgdm4G | True
+admin1 | admin1pass | $2b$12$7xzrCLlkpCq4ybjdrVJIM.H56.cnc/BJb87p4aA4usVZBpdMgdm4G | True
 admin2 | admin2pass | $2b$12$/6RyLblwDYrqt8o12lib/Ou3yxc4bdxoAo4i7aRG0OSNMMAcgKley | True
 alice_williams | alice_williams_pass | $2b$12$ikKJW9sJe7uqaJZ8FOhCv.dutXDHZVUXxvJnYrTviM6ZEXzwiSy4K | True
 bob_smith | bob_smith_pass | $2b$12$I4i1Y3DUjZyu98pIewXL0eAdNgJaz77TsjJgFJ.zCpbyLGA83X8z2 | True
@@ -77,45 +76,180 @@ ian_nelson | ian_nelson_pass | $2b$12$.oIhu86Hu1emz1EeXUFnfu58BwvryvJyp.MOHLUPUt
 
 
 
+# EcoCleanUp Web App
 
-def build_upcoming_events_query(today_value, date_from='', date_to='', location='', event_type=''):
-    """Build the filtered upcoming-events SQL and parameter tuple."""
-    query = 'SELECT * FROM events WHERE event_date >= %s'
-    params = [today_value]
+Flask + PostgreSQL web application for volunteer event management.
 
-    if date_from:
-        query += ' AND event_date >= %s'
-        params.append(date_from)
-    if date_to:
-        query += ' AND event_date <= %s'
-        params.append(date_to)
-    if location:
-        query += ' AND location_ ILIKE %s'
-        params.append(f"%{location}%")
-    if event_type:
-        query += ' AND event_type ILIKE %s'
-        params.append(event_type)
+## What This README Covers
+- Local deployment steps (Windows-first, works on macOS/Linux too).
+- Database setup and reset steps (important because schema changed multiple times).
+- How to run and use the app.
+- Common DB troubleshooting.
 
-    query += ' ORDER BY event_date ASC'
-    return query, tuple(params)
+## Tech Stack
+- Python 3.10+
+- Flask
+- PostgreSQL
+- psycopg2 (PostgreSQL driver)
 
+## Project Structure
+- `run.py`: app launcher for local development.
+- `loginapp/__init__.py`: Flask app init + DB init.
+- `loginapp/connect.py`: DB credentials and host config.
+- `loginapp/db.py`: Connecting to PostgreSQL.
+- `create_database.sql`: schema creation and schema evolution SQL.
+- `populate_database.sql`: seed/test data SQL.
 
+## 1. Prerequisites
 
-    # Duration must match the time gap between start and end (in minutes).
-          if (
-               duration_value is not None
-               and start_time_value is not None
-               and end_time_value is not None
-               and 'start_time' not in errors
-               and 'end_time' not in errors
-          ):
-               expected_minutes = int(
-                    (
-                         datetime.combine(date.today(), end_time_value)
-                         - datetime.combine(date.today(), start_time_value)
-                    ).total_seconds() // 60
-               )
-               if duration_value != expected_minutes:
-                    errors['duration'] = (
-                         f'Duration must equal end time minus start time ({expected_minutes} minutes).'
-                    )
+Install:
+- Python 3.10 or newer
+- PostgreSQL 14+ (or compatible)
+- `psql` command-line tool
+
+Verify:
+
+```powershell
+python --version
+psql --version
+```
+
+## 2. Python Environment Setup
+
+From project root:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+Important:
+- This project uses PostgreSQL via `psycopg2` in code (`loginapp/db.py`).
+- If you see `ModuleNotFoundError: No module named 'psycopg2'`, install:
+
+```powershell
+pip install psycopg2-binary
+```
+
+## 3. Database Configuration
+
+Edit `loginapp/connect.py`:
+
+```python
+dbuser = 'postgres'
+dbpass = 'YOUR_DB_PASSWORD'
+dbhost = 'localhost'
+dbport = 5432
+dbname = 'loginexample'
+```
+
+Use your own values for your PostgreSQL server.
+
+## 4. Recommended Database Setup (Clean Reset)
+
+Because schema changed over time, the safest process is a clean database rebuild.
+
+### 4.1 Drop and recreate database
+
+```powershell
+psql -U postgres -d postgres -c "DROP DATABASE IF EXISTS loginexample;"
+psql -U postgres -d postgres -c "CREATE DATABASE loginexample;"
+```
+
+### 4.2 Apply schema
+
+```powershell
+psql -U postgres -d loginexample -f create_database.sql
+```
+
+### 4.3 Load seed data
+
+```powershell
+psql -U postgres -d loginexample -f populate_database.sql
+```
+
+## 5. Run the App
+
+From project root:
+
+```powershell
+python run.py
+```
+
+Open:
+- `http://127.0.0.1:5000`
+
+## 6. How to Use (Main Flows)
+
+- Guest:
+  - Go to login page.
+  - Register a volunteer account or login.
+- Volunteer:
+  - Browse events, register, view reminders, submit feedback.
+- Event Leader:
+  - Create/edit/cancel events.
+  - Manage attendance, outcomes, reminder sending (leader-only routes).
+- Administrator:
+  - Access admin home, users, reports, and event overviews.
+  - Some event actions are intentionally blocked by role checks.
+
+## 7. Test Accounts
+
+Your seed scripts include many users. Example accounts from your current setup:
+- Volunteer: `customer1` / `customer1pass`
+- Event Leader: `staff1` / `staff1pass`
+- Admin: `admin2` / `admin2pass`
+
+Note:
+- In your notes you marked `admin1` password as problematic. Prefer `admin2` for testing.
+
+## 8. Database Troubleshooting
+
+### Error: enum/type already exists
+Cause:
+- Running `create_database.sql` repeatedly on a partially existing DB.
+
+Fix:
+- Use clean reset flow in Section 4.
+
+### Error: column/type mismatch (status, attendance, role)
+Cause:
+- Schema evolved (`nonactive` -> `inactive`, attendance enum updates, role migrations).
+
+Fix:
+- Clean reset and rerun both SQL files in order.
+
+### Error: relation/column does not exist
+Cause:
+- Seed or app code expects newer schema columns.
+
+Fix:
+- Ensure `create_database.sql` runs successfully before `populate_database.sql`.
+
+### App connects but queries fail immediately
+Checklist:
+- `loginapp/connect.py` credentials are correct.
+- DB name matches `dbname`.
+- `psycopg2` installed.
+- PostgreSQL service is running.
+
+## 9. Deployment Notes (Production)
+
+- Do not keep real DB password in source for production.
+- Move secrets/config to environment variables.
+- Set Flask `debug=False` in production startup.
+- Keep SQL backups before schema changes.
+
+## 10. Quick Recovery Recipe
+
+If DB gets out of sync after changes:
+
+1. Drop and recreate DB.
+2. Run `create_database.sql`.
+3. Run `populate_database.sql`.
+4. Confirm `connect.py` points to that DB.
+5. Restart app.
+
+This is the fastest stable path for this project.
+'@ | Set-Content -Path "c:\Users\xiafe\Documents\Sally\Lincoln\EcoCleanUp\README.md"

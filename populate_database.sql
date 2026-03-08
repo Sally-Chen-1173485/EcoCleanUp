@@ -192,3 +192,10 @@ VALUES
 	(18, 15, 'Late', '2026-03-19 11:00:00'),
 	(19, 16, 'Present', '2026-03-24 12:30:00'),
 	(20, 17, 'Excused', null);
+
+
+'''update users table for where the password_hash was copy pasted with extra spaces, 
+we need to trim those spaces to ensure the hashes are correct and can be used for authentication'''
+UPDATE users
+SET password_hash = trim(password_hash)
+WHERE password_hash <> trim(password_hash);
