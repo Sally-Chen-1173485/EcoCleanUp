@@ -7,7 +7,7 @@ VALUES
 	('admin1', '$2b$12$7xzrCLlkpCq4ybjdrVJIM.H56.cnc/BJb87p4aA4usVZBpdMgdm4G', 'admin1@example.com', 'admin');
 
 
-	-- Insert users with real names and hashed passwords-created by AI.
+	-- Insert users with real names and hashed passwords-name created by AI, password_hass created by password_hash_generator.py.
 INSERT INTO users (username, password_hash, email, role) 
 VALUES
     ('alice_williams', '$2b$12$ikKJW9sJe7uqaJZ8FOhCv.dutXDHZVUXxvJnYrTviM6ZEXzwiSy4K', 'alice.williams@example.com', 'customer'),

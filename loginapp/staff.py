@@ -641,10 +641,10 @@ def volunteer_history(volunteer_id):
           cursor.execute(
               '''
               SELECT t4.*, t3.attendance, t3.registered_at,
-                     f.rating, f.comments
+                     t2.rating, t2.comments
               FROM eventregistrations t3
               JOIN events t4 ON t3.event_id = t4.event_id
-              LEFT JOIN feedback f ON f.event_id = t4.event_id AND f.volunteer_id = %s
+              LEFT JOIN feedback t2 ON t2.event_id = t4.event_id AND t2.volunteer_id = %s
               WHERE t3.volunteer_id = %s
               ORDER BY t4.event_date DESC;
               ''',
