@@ -174,15 +174,17 @@ Open:
 
 - Guest:
   - Go to login page.
-  - Register a default volunteer account or login.
+  - Register as a default volunteer account or login.
 - Volunteer:
   - Browse events, register, view reminders, submit feedback.
   - event reminders need to be sent by the event leader to be pop up. 
 - Event Leader:
+  - cannot be registered. roles are created in the backend.
   - Create/edit/cancel events.
   - Manage attendance, outcomes, reminder sending (leader-only routes)
   - View a report for the events they manage.
 - Administrator:
+  - cannot be registered. roles are created in the backend.
   - Access admin home, review and manage users, view reports, and event overviews.
   - Some event actions are intentionally blocked by role checks.
 
