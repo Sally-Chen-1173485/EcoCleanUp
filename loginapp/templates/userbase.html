@@ -53,9 +53,11 @@
 						<span class="navbar-toggler-icon"></span>
 					</button>
 					<div class="collapse navbar-collapse" id="navbarNav">
+						{% set role = session.get('role') %}
 						<ul class="navbar-nav ms-auto">
+							{% if session.get('loggedin') %}
 							<li class="nav-item">
-								<a class="nav-link text-white text-decoration-underline{{' active' if active_page=='home' else ''}}" href="{% if session['role'] == 'Volunteers' %}{{ url_for('customer_home') }}{% elif session['role'] == 'Event Leaders' %}{{ url_for('staff_home') }}{% elif session['role'] == 'Administrators' %}{{ url_for('admin_home') }}{% endif %}">Home</a>
+								<a class="nav-link text-white text-decoration-underline{{' active' if active_page=='home' else ''}}" href="{% if role == 'Volunteers' %}{{ url_for('customer_home') }}{% elif role == 'Event Leaders' %}{{ url_for('staff_home') }}{% elif role == 'Administrators' %}{{ url_for('admin_home') }}{% else %}/{% endif %}">Home</a>
 							</li>
 							<li class="nav-item">
 								<a class="nav-link text-white text-decoration-underline{{' active' if active_page=='profile' else ''}}" href="{{ url_for('profile') }}">Profile</a>
@@ -63,6 +65,14 @@
 							<li class="nav-item">
 								<a class="nav-link text-white text-decoration-underline" href="{{ url_for('logout') }}">Log Out</a>
 							</li>
+							{% else %}
+							<li class="nav-item">
+								<a class="nav-link text-white text-decoration-underline" href="{{ url_for('login') }}">Log In</a>
+							</li>
+							<li class="nav-item">
+								<a class="nav-link text-white text-decoration-underline" href="{{ url_for('signup') }}">Register</a>
+							</li>
+							{% endif %}
 						</ul>
 					</div>
 				</div>
