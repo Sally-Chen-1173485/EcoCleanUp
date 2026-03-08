@@ -13,8 +13,7 @@ from loginapp.staff import (
     record_outcome as leader_record_outcome,
     volunteer_history as leader_volunteer_history,
     send_reminder as leader_send_reminder,
-    view_feedbacks as leader_view_feedbacks,
-)
+    view_feedbacks as leader_view_feedbacks,)
 
 
 def check_admin():

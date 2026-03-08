@@ -84,7 +84,7 @@ def customer_home():
                     )
                     if cursor.fetchone():
                          flash('You are already registered for that event.', 'info')
-                    else:
+                    # Check for time conflicts with existing registrations. 
                          cursor.execute('''
                               SELECT t4.event_name, t4.start_time, t4.end_time
                               FROM eventregistrations t3
@@ -126,6 +126,7 @@ def customer_home():
                rating = request.form.get('rating')
                comments = request.form.get('comments', '')
                with db.get_cursor() as cursor:
+                    #Select 1 to see if the volunteer has a registration for the event
                     cursor.execute(
                          'SELECT 1 FROM eventregistrations '
                          'WHERE event_id = %s AND volunteer_id = %s;',
@@ -144,6 +145,8 @@ def customer_home():
 
           return redirect(url_for('customer_home'))
 
+
+#  Display the homepage with event listings and feedback.
      date_from = request.args.get('date_from', '')
      date_to = request.args.get('date_to', '')
      location = request.args.get('location', '')
@@ -152,6 +155,7 @@ def customer_home():
      if past_scope not in ('all', 'mine'):
           past_scope = 'all'
 
+     #Use a dynamic query with filters based on the provided search criteria.
      query = 'SELECT * FROM events WHERE event_date >= %s'
      params = [date.today()]
      if date_from:
@@ -169,18 +173,20 @@ def customer_home():
      query += ' ORDER BY event_date ASC'
 
      with db.get_cursor() as cursor:
+          #Handles event filtering based on search criteria
           cursor.execute(query, tuple(params))
           upcoming_events = cursor.fetchall()
 
+          #Handle all registered events
           cursor.execute(
                'SELECT event_id FROM eventregistrations '
                'JOIN events USING(event_id) '
                'WHERE volunteer_id = %s AND event_date >= %s;',
-               (user_id, date.today())
-          )
+               (user_id, date.today()))
           reg_rows = cursor.fetchall()
           registered_ids = {r['event_id'] for r in reg_rows}
 
+          # A dynamic query linking eventregistrations t3, events t4, and feedback t2
           past_query = '''
                SELECT t4.*, t2.rating, t2.comments,
                       (t3.registration_id IS NOT NULL) AS is_registered
@@ -192,6 +198,7 @@ def customer_home():
                WHERE t4.event_date < %s
           '''
           past_params = [user_id, user_id, date.today()]
+          #add a condition to distinguish the user's registered past events.
           if past_scope == 'mine':
                past_query += ' AND t3.registration_id IS NOT NULL'
           past_query += ' ORDER BY t4.event_date DESC;'
@@ -199,6 +206,12 @@ def customer_home():
           cursor.execute(past_query, tuple(past_params))
           past_events = cursor.fetchall()
 
+          #Handle reminder notifications for upcoming events
+          #I have added additional columns in the eventregistrations table, 
+          #to track reminder status and message
+          #The first query below retrieves all upcoming events that the volunteer is registered for,
+          #and the second query retrieves any pending reminder notifications for those events. 
+          #After fetching the notifications, we mark them as no longer pending.
           cursor.execute(
                '''
                SELECT t4.event_id, t4.event_name, t4.event_date, t4.start_time, t4.end_time, t4.location_
@@ -208,45 +221,32 @@ def customer_home():
                  AND t4.event_date >= %s
                ORDER BY t4.event_date ASC, t4.start_time ASC NULLS LAST;
                ''',
-               (user_id, date.today())
-          )
+               (user_id, date.today()))
           reminder_events = cursor.fetchall()
 
+          reminder_notifications = []
           cursor.execute(
                '''
-               SELECT COUNT(*) AS cnt
-               FROM information_schema.columns
-               WHERE table_schema = current_schema()
-                 AND table_name = 'eventregistrations'
-                 AND column_name IN ('reminder_pending', 'reminder_sent_at', 'reminder_message');
-               '''
+               SELECT t3.registration_id AS reminder_id,
+                      t3.reminder_message AS message,
+                      t3.reminder_sent_at AS sent_at,
+                      t4.event_id, t4.event_name, t4.event_date, t4.start_time, t4.end_time, t4.location_,t4.safety_instructions, t3.reminder_message
+               FROM eventregistrations t3
+               JOIN events t4 ON t3.event_id = t4.event_id
+               WHERE t3.volunteer_id = %s
+                 AND t3.reminder_pending = TRUE
+               ORDER BY t3.reminder_sent_at DESC NULLS LAST;
+               ''',
+               (user_id,)
           )
-          reminder_columns_ready = cursor.fetchone()['cnt'] == 3
+          reminder_notifications = cursor.fetchall()
 
-          reminder_notifications = []
-          if reminder_columns_ready:
-               cursor.execute(
-                    '''
-                    SELECT t3.registration_id AS reminder_id,
-                           t3.reminder_message AS message,
-                           t3.reminder_sent_at AS sent_at,
-                           t4.event_id, t4.event_name, t4.event_date, t4.start_time, t4.end_time, t4.location_
-                    FROM eventregistrations t3
-                    JOIN events t4 ON t3.event_id = t4.event_id
-                    WHERE t3.volunteer_id = %s
-                      AND t3.reminder_pending = TRUE
-                    ORDER BY t3.reminder_sent_at DESC NULLS LAST;
-                    ''',
-                    (user_id,)
-               )
-               reminder_notifications = cursor.fetchall()
-
-          if reminder_columns_ready and reminder_notifications:
+          if reminder_notifications:
                reminder_ids = [n['reminder_id'] for n in reminder_notifications]
                cursor.execute(
                     'UPDATE eventregistrations SET reminder_pending = FALSE WHERE registration_id = ANY(%s);',
-                    (reminder_ids,)
-               )
+                    (reminder_ids,))
+               
 
      return render_template(
           'customer_home.html',
@@ -259,10 +259,12 @@ def customer_home():
           date_to=date_to,
           location=location,
           event_type=evtype,
-          past_scope=past_scope
-     )
+          past_scope=past_scope)
 
 
+
+
+# Shared event detail page for volunteers, event leaders and admins
 @app.route('/customer/event/<int:event_id>')
 def customer_event_detail(event_id):
      """Shared event detail page for volunteers, event leaders and admins."""
@@ -320,6 +322,10 @@ def customer_event_detail(event_id):
      )
 
 
+
+
+#Define a route for volunteers to deregister from an event. 
+# This will be a POST request to prevent accidental deregistration through a GET request.
 @app.route('/customer/event/<int:event_id>/deregister', methods=['POST'])
 def customer_deregister_event(event_id):
      """Allow a volunteer to remove their own registration from an event."""

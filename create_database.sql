@@ -167,4 +167,22 @@ ALTER TABLE eventregistrations
   ADD COLUMN IF NOT EXISTS reminder_sent_at timestamp with time zone,
   ADD COLUMN IF NOT EXISTS reminder_message text;
 
+--changes to alter attendance type to be avoide confusion for no-show vs absent
 
+CREATE TYPE new_attendance_type AS ENUM ('Present', 'Absent', 'Late', 'Excused', 'Pending');
+
+ALTER TABLE eventregistrations
+    ALTER COLUMN attendance DROP DEFAULT;
+
+
+UPDATE eventregistrations
+SET attendance = 'Pending'
+WHERE attendance = 'No-Show';
+
+ALTER TABLE eventregistrations
+  ALTER COLUMN attendance SET DATA TYPE new_attendance_type
+    USING attendance::text::new_attendance_type;
+    
+DROP TYPE attendance_type;
+
+ALTER TYPE new_attendance_type RENAME TO attendance_type;

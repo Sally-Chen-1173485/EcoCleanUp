@@ -6,74 +6,120 @@ from flask_bcrypt import Bcrypt
 
 flask_bcrypt = Bcrypt(app)
 
-
+# Helper functions for checking user roles and validating event form data, 
+# used across multiple staff/admin routes.
 def check_event_leader():
      """Helper to check if user is logged in and is an Event Leader."""
      if 'loggedin' not in session:
           return False
      return session['role'] == 'Event Leaders'
 
-
+#Helper to check if user is logged in as an Administrator.
 def check_admin():
      """Return True if current user is an administrator."""
      if 'loggedin' not in session:
           return False
      return session['role'] == 'Administrators'
 
-
+#Helper to check if user is logged in as either an Event Leader or an Administrator.
 def check_leader_or_admin():
      """Return True if the user is either an Event Leader or an Administrator."""
      if 'loggedin' not in session:
           return False
      return session['role'] in ('Event Leaders', 'Administrators')
 
-@app.route('/staff/reports')
-def staff_reports():
-     """Event leader report page (leader-specific events only)."""
+#Helper function to guard access to routes that require 
+# either Event Leader or Administrator role, 
+# returning appropriate responses if access is denied.
+# so that we can reuse this logic across multiple routes without duplicating.
+def _ensure_leader_or_admin_logged_in():
+     """Guard route access for Event Leaders and Administrators."""
      if 'loggedin' not in session:
           return redirect(url_for('login'))
      if session.get('role') not in ('Event Leaders', 'Administrators'):
           return render_template('access_denied.html'), 403
+     return None
 
-     if session.get('role') == 'Administrators':
-          return redirect(url_for('admin_reports'))
+# Helper functions for staff/admin routes to read and validate event form data, reduce code duplication.
+def _read_event_form_fields():
+     """Read and normalize event form fields from request.form."""
+     return {
+          'event_name': request.form.get('event_name', '').strip(),
+          'location': request.form.get('location', '').strip(),
+          'event_type': request.form.get('event_type', '').strip(),
+          'event_date': request.form.get('event_date', '').strip(),
+          'start_time': request.form.get('start_time', '').strip(),
+          'end_time': request.form.get('end_time', '').strip(),
+          'duration': request.form.get('duration', '').strip(),
+          'description': request.form.get('description', '').strip(),
+          'supplies': request.form.get('supplies', '').strip(),
+          'safety_instructions': request.form.get('safety_instructions', '').strip(),
+     }
 
-     user_id = session.get('user_id')
-     with db.get_cursor() as cursor:
-          cursor.execute(
-              '''
-              SELECT e.event_id,
-                     e.event_name,
-                     e.event_date,
-                     e.location_,
-                     COALESCE(out.num_attendees, 0) AS num_attendees,
-                     COALESCE(reg.reg_count, 0) AS registered_count,
-                     COALESCE(fb.feedback_count, 0) AS feedback_count,
-                     COALESCE(fb.avg_rating, 0) AS avg_rating
-              FROM events e
-              LEFT JOIN eventoutcomes out ON out.event_id = e.event_id
-              LEFT JOIN (
-                  SELECT event_id, COUNT(*) AS reg_count
-                  FROM eventregistrations
-                  GROUP BY event_id
-              ) reg ON reg.event_id = e.event_id
-              LEFT JOIN (
-                  SELECT event_id, COUNT(*) AS feedback_count, AVG(rating) AS avg_rating
-                  FROM feedback
-                  GROUP BY event_id
-              ) fb ON fb.event_id = e.event_id
-              WHERE e.event_leader_id = %s
-              ORDER BY e.event_date DESC;
-              ''',
-              (user_id,)
-          )
-          leader_event_reports = cursor.fetchall()
+#helper function to validate event form data and return any errors along with parsed values for time and duration fields.
+def _validate_event_form_fields(form_data, enforce_future_date=False):
+     """Validate create/edit event form and return (errors, parsed_values)."""
+     errors = {}
+     start_time_value = None
+     end_time_value = None
+     duration_value = None
 
-     return render_template(
-          'admin_reports.html',
-          is_admin=False,
-          leader_event_reports=leader_event_reports
-     )
+     if not form_data['event_name'] or len(form_data['event_name']) > 100:
+          errors['event_name'] = 'Event name required (max 100 chars)'
+     if not form_data['location'] or len(form_data['location']) > 255:
+          errors['location'] = 'Location required (max 255 chars)'
+     if not form_data['event_type'] or len(form_data['event_type']) > 50:
+          errors['event_type'] = 'Event type required (max 50 chars)'
+
+     if not form_data['event_date']:
+          errors['event_date'] = 'Event date required'
+     else:
+          try:
+               ed = date.fromisoformat(form_data['event_date'])
+               if enforce_future_date and ed < date.today():
+                    errors['event_date'] = 'Event date cannot be in the past'
+          except:
+               errors['event_date'] = 'Invalid date format'
+
+     if form_data['start_time']:
+          try:
+               start_time_value = datetime.strptime(form_data['start_time'], '%H:%M').time()
+          except:
+               errors['start_time'] = 'Invalid start time format'
+
+     if form_data['end_time']:
+          try:
+               end_time_value = datetime.strptime(form_data['end_time'], '%H:%M').time()
+          except:
+               errors['end_time'] = 'Invalid end time format'
+
+     if start_time_value and end_time_value and start_time_value >= end_time_value:
+          errors['end_time'] = 'End time must be after start time'
+
+     if form_data['duration']:
+          try:
+               duration_value = int(form_data['duration'])
+               if duration_value <= 0:
+                    errors['duration'] = 'Duration must be a positive integer'
+          except:
+               errors['duration'] = 'Duration must be an integer'
+
+     if len(form_data['description']) > 5000:
+          errors['description'] = 'Description cannot exceed 5000 characters'
+     if len(form_data['supplies']) > 5000:
+          errors['supplies'] = 'Supplies cannot exceed 5000 characters'
+     if len(form_data['safety_instructions']) > 5000:
+          errors['safety_instructions'] = 'Safety instructions cannot exceed 5000 characters'
+
+     return errors, {
+          'start_time_value': start_time_value,
+          'end_time_value': end_time_value,
+          'duration_value': duration_value,}
+
+
+
+
+# Event Leader homepage, showing their events and details about these events.
 
 @app.route('/staff/home')
 def staff_home():
@@ -84,16 +130,15 @@ def staff_home():
 
      If the user is not logged in or not an event leader (or admin), redirects or shows access denied.
      """
-     if not check_leader_or_admin():
-          return redirect(url_for('login'))
-     elif session['role'] not in ('Event Leaders','Administrators'):
-          return render_template('access_denied.html'), 403
+     guard_response = _ensure_leader_or_admin_logged_in()
+     if guard_response is not None:
+          return guard_response
 
      date_from = request.args.get('date_from', '')
      date_to = request.args.get('date_to', '')
      location = request.args.get('location', '')
      evtype = request.args.get('event_type', '')
-
+     
      query = 'SELECT * FROM events WHERE event_date >= %s'
      params = [date.today()]
      if date_from:
@@ -121,10 +166,9 @@ def staff_home():
               WHERE event_date < %s
               ORDER BY event_date DESC;
               ''',
-              (date.today(),)
-          )
+              (date.today(),))
           past_events = cursor.fetchall()
-
+     
      return render_template(
           'customer_home.html',
           upcoming_events=upcoming_events,
@@ -135,9 +179,58 @@ def staff_home():
           date_to=date_to,
           location=location,
           event_type=evtype,
-          past_scope='all'
-     )
+          past_scope='all')
 
+
+# Handles the report page for event leaders, 
+# which shows all events led by the logged-in leader, 
+# along with key metrics for each event.
+@app.route('/staff/reports')
+def staff_reports():
+     """Event leader report page (leader-specific events only)."""
+     if 'loggedin' not in session:
+          return redirect(url_for('login'))
+     if session.get('role') not in ('Event Leaders', 'Administrators'):
+          return render_template('access_denied.html'), 403
+
+     if session.get('role') == 'Administrators':
+          return redirect(url_for('admin_reports'))
+
+     user_id = session.get('user_id')
+     with db.get_cursor() as cursor:
+          cursor.execute(
+              '''
+              SELECT t4.event_id,
+                     t4.event_name,
+                     t4.event_date,
+                     t4.location_,
+                     COALESCE(t5.num_attendees, 0) AS num_attendees,
+                     COALESCE(t3.reg_count, 0) AS registered_count,
+                     COALESCE(t2.feedback_count, 0) AS feedback_count,
+                     COALESCE(t2.avg_rating, 0) AS avg_rating
+              FROM events t4
+              LEFT JOIN eventoutcomes t5 ON t5.event_id = t4.event_id
+              LEFT JOIN (
+                  SELECT event_id, COUNT(*) AS reg_count
+                  FROM eventregistrations
+                  GROUP BY event_id) t3 ON t3.event_id = t4.event_id
+              LEFT JOIN (
+                  SELECT event_id, COUNT(*) AS feedback_count, AVG(rating) AS avg_rating
+                  FROM feedback
+                  GROUP BY event_id) t2 ON t2.event_id = t4.event_id
+              WHERE t4.event_leader_id = %s
+              ORDER BY t4.event_date DESC;
+              ''',
+              (user_id,))
+          leader_event_reports = cursor.fetchall()
+
+     return render_template(
+          'admin_reports.html',
+          is_admin=False,
+          leader_event_reports=leader_event_reports)
+
+#Handles the event creation page for event leaders, 
+#allowing them to create new events and specify details about these events.
 @app.route('/staff/event/create', methods=['GET', 'POST'])
 def create_event():
      """Create a new cleanup event."""
@@ -150,66 +243,8 @@ def create_event():
      errors = {}
 
      if request.method == 'POST':
-          event_name = request.form.get('event_name', '').strip()
-          location = request.form.get('location', '').strip()
-          event_type = request.form.get('event_type', '').strip()
-          event_date = request.form.get('event_date', '').strip()
-          start_time = request.form.get('start_time', '').strip()
-          end_time = request.form.get('end_time', '').strip()
-          duration = request.form.get('duration', '').strip()
-          description = request.form.get('description', '').strip()
-          supplies = request.form.get('supplies', '').strip()
-          safety_instructions = request.form.get('safety_instructions', '').strip()
-
-          start_time_value = None
-          end_time_value = None
-          duration_value = None
-
-          if not event_name or len(event_name) > 100:
-               errors['event_name'] = 'Event name required (max 100 chars)'
-          if not location or len(location) > 255:
-               errors['location'] = 'Location required (max 255 chars)'
-          if not event_type or len(event_type) > 50:
-               errors['event_type'] = 'Event type required (max 50 chars)'
-          if not event_date:
-               errors['event_date'] = 'Event date required'
-          else:
-               try:
-                    ed = date.fromisoformat(event_date)
-                    if ed < date.today():
-                         errors['event_date'] = 'Event date cannot be in the past'
-               except:
-                    errors['event_date'] = 'Invalid date format'
-
-          if start_time:
-               try:
-                    start_time_value = datetime.strptime(start_time, '%H:%M').time()
-               except:
-                    errors['start_time'] = 'Invalid start time format'
-
-          if end_time:
-               try:
-                    end_time_value = datetime.strptime(end_time, '%H:%M').time()
-               except:
-                    errors['end_time'] = 'Invalid end time format'
-
-          if start_time_value and end_time_value and start_time_value >= end_time_value:
-               errors['end_time'] = 'End time must be after start time'
-
-          if duration:
-               try:
-                    duration_value = int(duration)
-                    if duration_value <= 0:
-                         errors['duration'] = 'Duration must be a positive integer'
-               except:
-                    errors['duration'] = 'Duration must be an integer'
-
-          if len(description) > 5000:
-               errors['description'] = 'Description cannot exceed 5000 characters'
-          if len(supplies) > 5000:
-               errors['supplies'] = 'Supplies cannot exceed 5000 characters'
-          if len(safety_instructions) > 5000:
-               errors['safety_instructions'] = 'Safety instructions cannot exceed 5000 characters'
+          form_data = _read_event_form_fields()
+          errors, parsed = _validate_event_form_fields(form_data, enforce_future_date=True)
 
           if not errors:
                with db.get_cursor() as cursor:
@@ -218,9 +253,12 @@ def create_event():
                         '(event_name, event_leader_id, location_, event_type, event_date, '
                         'start_time, end_time, duration, description_, supplies, safety_instructions) '
                         'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);',
-                        (event_name, user_id, location, event_type, event_date,
-                         start_time_value, end_time_value, duration_value,
-                         description or None, supplies or None, safety_instructions or None))
+                        (    form_data['event_name'], user_id, form_data['location'],
+                             form_data['event_type'], form_data['event_date'],
+                             parsed['start_time_value'], parsed['end_time_value'], parsed['duration_value'],
+                             form_data['description'] or None, form_data['supplies'] or None,
+                             form_data['safety_instructions'] or None))
+                    
                flash('Event created successfully!', 'success')
                return redirect(url_for('staff_home'))
 
@@ -228,13 +266,15 @@ def create_event():
      return render_template('event.html', mode='create', errors=errors,
                             today_iso=date.today().isoformat())
 
+
+#Handles the event detail page for event leaders, 
+# showing details about a specific event they lead.
 @app.route('/staff/event/<int:event_id>')
 def event_detail(event_id):
      """View event details with registered volunteers."""
-     if not check_leader_or_admin():
-          return redirect(url_for('login'))
-     elif session['role'] not in ('Event Leaders','Administrators'):
-          return render_template('access_denied.html'), 403
+     guard_response = _ensure_leader_or_admin_logged_in()
+     if guard_response is not None:
+          return guard_response
 
      user_id = session['user_id']
      is_admin = session['role'] == 'Administrators'
@@ -285,6 +325,9 @@ def event_detail(event_id):
 
      can_manage_event = is_admin or (event['event_leader_id'] == user_id)
 
+
+    #Determine URLs for event management actions based on user role
+
      if is_admin:
           manage_attendance_url = url_for('admin_manage_attendance', event_id=event_id)
           record_outcome_url = url_for('admin_record_outcome', event_id=event_id)
@@ -319,21 +362,24 @@ def event_detail(event_id):
           cancel_event_url=cancel_event_url,
           back_url=back_url,
           back_label='Back to Events',
-          now=datetime.now()
-     )
+          now=datetime.now())
 
+
+
+#handles the event editing page for event leaders, 
+# allowing them to edit details about an event they lead.
 @app.route('/staff/event/<int:event_id>/edit', methods=['GET', 'POST'])
 def edit_event(event_id):
      """Edit an existing event."""
-     if not check_leader_or_admin():
-          return redirect(url_for('login'))
-     elif session['role'] not in ('Event Leaders','Administrators'):
-          return render_template('access_denied.html'), 403
+     guard_response = _ensure_leader_or_admin_logged_in()
+     if guard_response is not None:
+          return guard_response
 
      user_id = session['user_id']
      errors = {}
 
      with db.get_cursor() as cursor:
+          #administrators can edit any event, but event leaders can only edit their own events
           if session['role'] == 'Administrators':
                cursor.execute('SELECT * FROM events WHERE event_id = %s;', (event_id,))
           else:
@@ -346,59 +392,8 @@ def edit_event(event_id):
                return redirect(url_for('staff_home'))
 
      if request.method == 'POST':
-          event_name = request.form.get('event_name', '').strip()
-          location = request.form.get('location', '').strip()
-          event_type = request.form.get('event_type', '').strip()
-          event_date = request.form.get('event_date', '').strip()
-          start_time = request.form.get('start_time', '').strip()
-          end_time = request.form.get('end_time', '').strip()
-          duration = request.form.get('duration', '').strip()
-          description = request.form.get('description', '').strip()
-          supplies = request.form.get('supplies', '').strip()
-          safety_instructions = request.form.get('safety_instructions', '').strip()
-
-          start_time_value = None
-          end_time_value = None
-          duration_value = None
-
-          if not event_name or len(event_name) > 100:
-               errors['event_name'] = 'Event name required (max 100 chars)'
-          if not location or len(location) > 255:
-               errors['location'] = 'Location required (max 255 chars)'
-          if not event_type or len(event_type) > 50:
-               errors['event_type'] = 'Event type required (max 50 chars)'
-          if not event_date:
-               errors['event_date'] = 'Event date required'
-
-          if start_time:
-               try:
-                    start_time_value = datetime.strptime(start_time, '%H:%M').time()
-               except:
-                    errors['start_time'] = 'Invalid start time format'
-
-          if end_time:
-               try:
-                    end_time_value = datetime.strptime(end_time, '%H:%M').time()
-               except:
-                    errors['end_time'] = 'Invalid end time format'
-
-          if start_time_value and end_time_value and start_time_value >= end_time_value:
-               errors['end_time'] = 'End time must be after start time'
-
-          if duration:
-               try:
-                    duration_value = int(duration)
-                    if duration_value <= 0:
-                         errors['duration'] = 'Duration must be a positive integer'
-               except:
-                    errors['duration'] = 'Duration must be an integer'
-
-          if len(description) > 5000:
-               errors['description'] = 'Description cannot exceed 5000 characters'
-          if len(supplies) > 5000:
-               errors['supplies'] = 'Supplies cannot exceed 5000 characters'
-          if len(safety_instructions) > 5000:
-               errors['safety_instructions'] = 'Safety instructions cannot exceed 5000 characters'
+          form_data = _read_event_form_fields()
+          errors, parsed = _validate_event_form_fields(form_data)
 
           if not errors:
                with db.get_cursor() as cursor:
@@ -407,10 +402,11 @@ def edit_event(event_id):
                         'event_type = %s, event_date = %s, start_time = %s, end_time = %s, '
                         'duration = %s, description_ = %s, supplies = %s, safety_instructions = %s '
                         'WHERE event_id = %s;',
-                        (event_name, location, event_type, event_date,
-                         start_time_value, end_time_value, duration_value,
-                         description or None, supplies or None, safety_instructions or None,
-                         event_id))
+                        (    form_data['event_name'], form_data['location'], form_data['event_type'],
+                             form_data['event_date'], parsed['start_time_value'], parsed['end_time_value'],
+                             parsed['duration_value'], form_data['description'] or None,
+                             form_data['supplies'] or None, form_data['safety_instructions'] or None,
+                             event_id))
                flash('Event updated successfully!', 'success')
                return redirect(url_for('event_detail', event_id=event_id))
 
@@ -418,13 +414,18 @@ def edit_event(event_id):
      return render_template('event.html', mode='edit', event=event, errors=errors,
                             today_iso=date.today().isoformat())
 
+
+
+
+# Handles the event cancellation route for event leaders, 
+# allowing them to cancel an event they lead, 
+# which deletes the event and all associated registrations and feedback.
 @app.route('/staff/event/<int:event_id>/cancel', methods=['POST'])
 def cancel_event(event_id):
      """Cancel an event."""
-     if not check_leader_or_admin():
-          return redirect(url_for('login'))
-     elif session['role'] not in ('Event Leaders','Administrators'):
-          return render_template('access_denied.html'), 403
+     guard_response = _ensure_leader_or_admin_logged_in()
+     if guard_response is not None:
+          return guard_response
 
      user_id = session['user_id']
 
@@ -448,13 +449,16 @@ def cancel_event(event_id):
      flash('Event cancelled and removed.', 'success')
      return redirect(url_for('staff_home'))
 
+
+#handles remove volunteer from event route for event leaders, 
+# allowing them to remove a volunteer from an event they lead, 
+# which deletes the volunteer's registration and any associated feedback for that event.
 @app.route('/staff/event/<int:event_id>/volunteer/<int:volunteer_id>/remove', methods=['POST'])
 def remove_volunteer(event_id, volunteer_id):
      """Remove a volunteer from an event."""
-     if not check_leader_or_admin():
-          return redirect(url_for('login'))
-     elif session['role'] not in ('Event Leaders','Administrators'):
-          return render_template('access_denied.html'), 403
+     guard_response = _ensure_leader_or_admin_logged_in()
+     if guard_response is not None:
+          return guard_response
 
      user_id = session['user_id']
 
@@ -481,17 +485,20 @@ def remove_volunteer(event_id, volunteer_id):
      flash('Volunteer removed from event.', 'success')
      return redirect(url_for('event_detail', event_id=event_id))
 
+
+
+#Handles the attendance management page for event leaders, 
+# allowing them to track and update volunteer attendance for an event they lead.
 @app.route('/staff/event/<int:event_id>/attendance', methods=['GET', 'POST'])
 def manage_attendance(event_id):
      """Track and update volunteer attendance."""
-     if not check_leader_or_admin():
-          return redirect(url_for('login'))
-     elif session['role'] not in ('Event Leaders','Administrators'):
-          return render_template('access_denied.html'), 403
+     guard_response = _ensure_leader_or_admin_logged_in()
+     if guard_response is not None:
+          return guard_response
 
      user_id = session['user_id']
 
-     valid_attendance_statuses = ('Present', 'Absent', 'Late', 'Excused', 'No-Show', 'Pending')
+     valid_attendance_statuses = ('Present', 'Absent', 'Late', 'Excused', 'Pending')
 
      with db.get_cursor() as cursor:
           if session['role'] == 'Administrators':
@@ -541,10 +548,9 @@ def manage_attendance(event_id):
 @app.route('/staff/event/<int:event_id>/outcome', methods=['GET', 'POST'])
 def record_outcome(event_id):
      """Record event outcomes (attendees, bags, recyclables)."""
-     if not check_leader_or_admin():
-          return redirect(url_for('login'))
-     elif session['role'] not in ('Event Leaders','Administrators'):
-          return render_template('access_denied.html'), 403
+     guard_response = _ensure_leader_or_admin_logged_in()
+     if guard_response is not None:
+          return guard_response
 
      user_id = session['user_id']
      errors = {}
@@ -605,10 +611,9 @@ def record_outcome(event_id):
 @app.route('/staff/volunteer/<int:volunteer_id>/history')
 def volunteer_history(volunteer_id):
      """View a volunteer's participation history."""
-     if not check_leader_or_admin():
-          return redirect(url_for('login'))
-     elif session['role'] not in ('Event Leaders','Administrators'):
-          return render_template('access_denied.html'), 403
+     guard_response = _ensure_leader_or_admin_logged_in()
+     if guard_response is not None:
+          return guard_response
 
      with db.get_cursor() as cursor:
           cursor.execute('SELECT * FROM users WHERE user_id = %s;', (volunteer_id,))
@@ -635,10 +640,9 @@ def volunteer_history(volunteer_id):
 @app.route('/staff/event/<int:event_id>/send-reminder', methods=['POST'])
 def send_reminder(event_id):
      """Send event reminder to registered volunteers."""
-     if not check_leader_or_admin():
-          return redirect(url_for('login'))
-     elif session['role'] not in ('Event Leaders','Administrators'):
-          return render_template('access_denied.html'), 403
+     guard_response = _ensure_leader_or_admin_logged_in()
+     if guard_response is not None:
+          return guard_response
 
      user_id = session['user_id']
      is_admin = session['role'] == 'Administrators'
@@ -701,10 +705,9 @@ def send_reminder(event_id):
 @app.route('/staff/event/<int:event_id>/feedbacks')
 def view_feedbacks(event_id):
      """View all feedbacks for an event."""
-     if not check_leader_or_admin():
-          return redirect(url_for('login'))
-     elif session['role'] not in ('Event Leaders','Administrators'):
-          return render_template('access_denied.html'), 403
+     guard_response = _ensure_leader_or_admin_logged_in()
+     if guard_response is not None:
+          return guard_response
 
      user_id = session['user_id']
 

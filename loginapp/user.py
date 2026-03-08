@@ -7,6 +7,7 @@ import os
 import uuid
 from werkzeug.utils import secure_filename
 
+
 # Create an instance of the Bcrypt class, which we'll be using to hash user
 # passwords during login and registration.
 flask_bcrypt = Bcrypt(app)
@@ -15,15 +16,24 @@ flask_bcrypt = Bcrypt(app)
 default_user_role = 'Volunteers'
 default_status= 'active'
 
+# Default profile image settings
 ALLOWED_PROFILE_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 DEFAULT_PROFILE_IMAGE = 'default_plant.jpg'
 
+'''Define a function to get the default profile image filename, 
+checking if the preferred default image exists in the static folder. 
+If it doesn't exist, fall back to a generic default image.'''
 def get_default_profile_image_filename():
     """Return the default profile image filename available in /static."""
     preferred_default_path = os.path.join(app.root_path, 'static', DEFAULT_PROFILE_IMAGE)
     if os.path.exists(preferred_default_path):
         return DEFAULT_PROFILE_IMAGE
     return 'image1.jpg'
+
+
+'''Define a function to handle profile image uploads, 
+which checks the file type, saves the file with a unique name, 
+and returns the path for database storage along with any error messages.'''
 
 def upload_profile_image(file):
     """Save an uploaded profile image and return (db_path, error_message).
@@ -58,6 +68,10 @@ def delete_uploaded_profile_image(file_path):
     if os.path.exists(abs_path):
         os.remove(abs_path)
 
+
+
+
+
 def user_home_url():
     """Generates a URL to the homepage for the currently logged-in user.
     
@@ -65,6 +79,7 @@ def user_home_url():
     instead. If the user appears to be logged in, but the role stored in their
     session cookie is invalid (i.e. not a recognised role), it returns the URL
     for the logout page to clear that invalid session data."""
+
     if 'loggedin' in session:
         role = session.get('role', None)
 
@@ -94,6 +109,8 @@ def root():
     else:
         return redirect(url_for('login'))
 
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     """Login page endpoint.
@@ -119,12 +136,7 @@ def login():
         # Attempt to validate the login details against the database.
         with db.get_cursor() as cursor:
             # Try to retrieve the account details for the specified username.
-            #
-            # Note: we use a Python multiline string (triple quote) here to
-            # make the query more readable in source code. This is just a style
-            # choice: the line breaks are ignored by MySQL, and it would be
-            # equally valid to put the whole SQL statement on one line like we
-            # do at the beginning of the `signup` function.
+        
             cursor.execute('''
                            SELECT user_id, username, password_hash, role
                            FROM users
@@ -167,13 +179,7 @@ def login():
                 # can see what they entered (otherwise, they might just keep
                 # trying the same thing). We also set a `username_invalid` flag
                 # that tells the template to display an appropriate message.
-                #
-                # Note: In this example app, we tell the user if the user
-                # account doesn't exist. Many websites (e.g. Google, Microsoft)
-                # do this, but other sites display a single "Invalid username
-                # or password" message to prevent an attacker from determining
-                # whether a username exists or not. Here, we accept that risk
-                # to provide more useful feedback to the user.
+                
                 return render_template('login.html', 
                                        username=username,
                                        username_invalid=True)
@@ -216,10 +222,7 @@ def signup():
         if not profile_image and not profile_image_upload_error:
             profile_image = get_default_profile_image_filename()
 
-           
-
-         
-    
+        
 
         # We start by assuming that everything is okay. If we encounter any
         # errors during validation, we'll store an error message in one or more
@@ -261,12 +264,8 @@ def signup():
         elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
             email_error = 'Invalid email address.'
                 
-        # Validate password. Think about what other constraints might be useful
-        # here for security (e.g. requiring a certain mix of character types,
-        # or avoiding overly-common passwords). Make sure that you clearly
-        # communicate any rules to the user, either through hints on the signup
-        # page or with clear error messages here.
-        #
+        # Validate password.
+        
         # Note: Unlike the username and email address, we don't enforce a
         # maximum password length. Because we'll be storing a hash of the
         # password in our database, and not the password itself, it doesn't
@@ -356,6 +355,9 @@ def signup():
                            environmental_interests='', profile_image='',
                            password_confirm_error=None)
 
+
+
+# handles user profile viewing and editing (for all user roles)
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
     """User Profile page endpoint.
@@ -371,6 +373,9 @@ def profile():
     """
     if 'loggedin' not in session:
         return redirect(url_for('login'))
+    if session.get('role') not in ('Volunteers', 'Event Leaders', 'Administrators'):
+        return render_template('access_denied.html'), 403
+
 
     # default error variables and success flag
     full_name_error = None
@@ -499,7 +504,7 @@ def profile():
                 new_password_error = 'New password must be different from current password.'
             if new_password and flask_bcrypt.check_password_hash(profile['password_hash'], new_password):
                 new_password_error = 'New password must be different from current password.'
-
+         #new password cannot be the same as current password
         if new_password and not new_password_error:
             with db.get_cursor() as cursor:
                 cursor.execute('SELECT password_hash FROM users WHERE user_id = %s;', (session['user_id'],))
@@ -561,6 +566,7 @@ def profile():
                            confirm_password_error=confirm_password_error,
                            profile_updated=profile_updated,
                            default_profile_image=default_profile_image)
+
 
 @app.route('/logout')
 def logout():

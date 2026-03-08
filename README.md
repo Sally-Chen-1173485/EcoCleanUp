@@ -73,3 +73,49 @@ fiona_green | fiona_green_pass | $2b$12$eZOpyVwMtBWKS7e7aeqjCOw3IPjR9NHfJSiWQfEZ
 george_adams | george_adams_pass | $2b$12$kEoCPim2900d4clj20V5SO5QdomimlWTBUoMFCSogbzsaLDVKSAIq | True
 hannah_baker | hannah_baker_pass | $2b$12$.yUCfttbujSMJZuwhhrsLOweUx2g9DJ1EpiCIYVYX4aE0m4sRAfCS | True
 ian_nelson | ian_nelson_pass | $2b$12$.oIhu86Hu1emz1EeXUFnfu58BwvryvJyp.MOHLUPUtU7MDZk8UhBe | True
+
+
+
+
+
+def build_upcoming_events_query(today_value, date_from='', date_to='', location='', event_type=''):
+    """Build the filtered upcoming-events SQL and parameter tuple."""
+    query = 'SELECT * FROM events WHERE event_date >= %s'
+    params = [today_value]
+
+    if date_from:
+        query += ' AND event_date >= %s'
+        params.append(date_from)
+    if date_to:
+        query += ' AND event_date <= %s'
+        params.append(date_to)
+    if location:
+        query += ' AND location_ ILIKE %s'
+        params.append(f"%{location}%")
+    if event_type:
+        query += ' AND event_type ILIKE %s'
+        params.append(event_type)
+
+    query += ' ORDER BY event_date ASC'
+    return query, tuple(params)
+
+
+
+    # Duration must match the time gap between start and end (in minutes).
+          if (
+               duration_value is not None
+               and start_time_value is not None
+               and end_time_value is not None
+               and 'start_time' not in errors
+               and 'end_time' not in errors
+          ):
+               expected_minutes = int(
+                    (
+                         datetime.combine(date.today(), end_time_value)
+                         - datetime.combine(date.today(), start_time_value)
+                    ).total_seconds() // 60
+               )
+               if duration_value != expected_minutes:
+                    errors['duration'] = (
+                         f'Duration must equal end time minus start time ({expected_minutes} minutes).'
+                    )
