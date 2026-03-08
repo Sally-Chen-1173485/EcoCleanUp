@@ -202,6 +202,17 @@
         Only my past events
       </a>
     </div>
+    {% elif session['role'] == 'Event Leaders' %}
+    <div class="btn-group" role="group" aria-label="Past event scope">
+      <a href="{{ url_for('staff_home', date_from=date_from, date_to=date_to, location=location, event_type=event_type, past_scope='all') }}"
+         class="btn btn-sm {% if past_scope == 'all' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
+        All past events
+      </a>
+      <a href="{{ url_for('staff_home', date_from=date_from, date_to=date_to, location=location, event_type=event_type, past_scope='mine') }}"
+         class="btn btn-sm {% if past_scope == 'mine' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
+        Past events I manage
+      </a>
+    </div>
     {% endif %}
   </div>
   {% if past_events and past_events|length > 0 %}

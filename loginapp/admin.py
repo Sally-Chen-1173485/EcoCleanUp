@@ -13,100 +13,47 @@ from loginapp.staff import (
     record_outcome as leader_record_outcome,
     volunteer_history as leader_volunteer_history,
     send_reminder as leader_send_reminder,
-    view_feedbacks as leader_view_feedbacks,)
+    view_feedbacks as leader_view_feedbacks,
+    build_upcoming_events_query,
+    _ensure_logged_in_with_roles,_ensure_leader_or_admin_logged_in)
+
+#helper function to guard admin-only routes
+def _ensure_admin_logged_in():
+    """Guard route access for Administrators only."""
+    return _ensure_logged_in_with_roles('Administrators')
 
 
-def check_admin():
-    """Return True if the current session belongs to an administrator."""
-    if 'loggedin' not in session:
-        return False
-    return session.get('role') == 'Administrators'
-
-
+# Admin homepage 
 @app.route('/admin/home')
 def admin_home():
-    """Admin Homepage endpoint with embedded users and reports."""
-    if not check_admin():
-        if 'loggedin' not in session:
-            return redirect(url_for('login'))
-        return render_template('access_denied.html'), 403
+    """Admin overview page with navigation to dedicated admin tools."""
+    guard_response = _ensure_admin_logged_in()
+    if guard_response is not None:
+        return guard_response
 
-    # prepare user listing
-    q = request.args.get('q', '').strip()
-    with db.get_cursor() as cursor:
-        if q:
-            pattern = f"%{q}%"
-            cursor.execute(
-                "SELECT * FROM users WHERE username ILIKE %s OR full_name ILIKE %s OR email ILIKE %s OR role ILIKE %s ORDER BY username;",
-                (pattern, pattern, pattern, pattern)
-            )
-        else:
-            cursor.execute('SELECT * FROM users ORDER BY username;')
-        users = cursor.fetchall()
+    return render_template('admin_home.html')
 
-        # gather report statistics
-        cursor.execute('SELECT COUNT(*) FROM events;')
-        total_events = cursor.fetchone()['count']
-        cursor.execute("SELECT COUNT(*) FROM users WHERE role='Volunteers';")
-        total_volunteers = cursor.fetchone()['count']
-        cursor.execute("SELECT COUNT(*) FROM users WHERE role='Event Leaders';")
-        total_leaders = cursor.fetchone()['count']
-        cursor.execute('SELECT COUNT(*) FROM feedback;')
-        total_feedbacks = cursor.fetchone()['count']
-        cursor.execute('SELECT AVG(rating) FROM feedback;')
-        avg_rating = cursor.fetchone()['avg'] or 0
-        cursor.execute('SELECT attendance, COUNT(*) AS cnt FROM eventregistrations GROUP BY attendance;')
-        attendance_counts = cursor.fetchall()
-        cursor.execute(
-            'SELECT t1.user_id, t1.full_name, COUNT(*) AS reg_count '
-            'FROM eventregistrations t3 '
-            'JOIN users t1 ON t3.volunteer_id = t1.user_id '
-            'GROUP BY t1.user_id, t1.full_name '
-            'ORDER BY reg_count DESC;'
-        )
-        engagement = cursor.fetchall()
-
-    return render_template('admin_home.html', users=users, q=q,
-                           total_events=total_events,
-                           total_volunteers=total_volunteers,
-                           total_leaders=total_leaders,
-                           total_feedbacks=total_feedbacks,
-                           avg_rating=avg_rating,
-                           attendance_counts=attendance_counts,
-                           engagement=engagement)
-
-
+#admin views for events, reusing event leader templates where possible
 @app.route('/admin/events')
 def admin_events():
     """List all cleanup events. Reuses the event leader template."""
-    if not check_admin():
-        if 'loggedin' not in session:
-            return redirect(url_for('login'))
-        return render_template('access_denied.html'), 403
+    guard_response = _ensure_admin_logged_in()
+    if guard_response is not None:
+        return guard_response
 
     date_from = request.args.get('date_from', '')
     date_to = request.args.get('date_to', '')
     location = request.args.get('location', '')
     evtype = request.args.get('event_type', '')
 
-    query = 'SELECT * FROM events WHERE event_date >= %s'
-    params = [date.today()]
-    if date_from:
-        query += ' AND event_date >= %s'
-        params.append(date_from)
-    if date_to:
-        query += ' AND event_date <= %s'
-        params.append(date_to)
-    if location:
-        query += ' AND location_ ILIKE %s'
-        params.append(f"%{location}%")
-    if evtype:
-        query += ' AND event_type ILIKE %s'
-        params.append(evtype)
-    query += ' ORDER BY event_date ASC'
+    query, params = build_upcoming_events_query(
+        date_from=date_from,
+        date_to=date_to,
+        location=location,
+        event_type=evtype)
 
     with db.get_cursor() as cursor:
-        cursor.execute(query, tuple(params))
+        cursor.execute(query, params)
         upcoming_events = cursor.fetchall()
 
         cursor.execute(
@@ -127,92 +74,78 @@ def admin_events():
         past_events=past_events,
         reminder_events=[],
         date_from=date_from,
-        date_to=date_to,
-        location=location,
-        event_type=evtype,
-        past_scope='all'
-    )
+        date_to=date_to)
 
-
+#admin view for event details, reusing event leader template
 @app.route('/admin/event/<int:event_id>')
 def admin_event_detail(event_id):
-    if not check_admin():
-        if 'loggedin' not in session:
-            return redirect(url_for('login'))
-        return render_template('access_denied.html'), 403
+    guard_response = _ensure_admin_logged_in()
+    if guard_response is not None:
+        return guard_response
     return leader_event_detail(event_id)
 
-
+#admin views for event editing
 @app.route('/admin/event/<int:event_id>/edit', methods=['GET', 'POST'])
 def admin_edit_event(event_id):
-    if not check_admin():
-        if 'loggedin' not in session:
-            return redirect(url_for('login'))
-        return render_template('access_denied.html'), 403
+    guard_response = _ensure_admin_logged_in()
+    if guard_response is not None:
+        return guard_response
     return leader_edit_event(event_id)
 
-
+#admin view for event cancellation
 @app.route('/admin/event/<int:event_id>/cancel', methods=['POST'])
 def admin_cancel_event(event_id):
-    if not check_admin():
-        if 'loggedin' not in session:
-            return redirect(url_for('login'))
-        return render_template('access_denied.html'), 403
+    guard_response = _ensure_admin_logged_in()
+    if guard_response is not None:
+        return guard_response
     return leader_cancel_event(event_id)
 
-
+#admin view for managing event attendance(although it is block now)
 @app.route('/admin/event/<int:event_id>/attendance', methods=['GET', 'POST'])
 def admin_manage_attendance(event_id):
-    if not check_admin():
-        if 'loggedin' not in session:
-            return redirect(url_for('login'))
-        return render_template('access_denied.html'), 403
+    guard_response = _ensure_admin_logged_in()
+    if guard_response is not None:
+        return guard_response
     return leader_manage_attendance(event_id)
 
-
-@app.route('/admin/event/<int:event_id>/outcome', methods=['GET', 'POST'])
+#admin view for event outcome, it is blocked now but leave it here for future development 
 def admin_record_outcome(event_id):
-    if not check_admin():
-        if 'loggedin' not in session:
-            return redirect(url_for('login'))
-        return render_template('access_denied.html'), 403
+    guard_response = _ensure_admin_logged_in()
+    if guard_response is not None:
+        return guard_response
     return leader_record_outcome(event_id)
 
-
+#admin view for volunteer history, reusing event leader template
 @app.route('/admin/volunteer/<int:volunteer_id>/history')
 def admin_volunteer_history(volunteer_id):
-    if not check_admin():
-        if 'loggedin' not in session:
-            return redirect(url_for('login'))
-        return render_template('access_denied.html'), 403
+    guard_response = _ensure_admin_logged_in()
+    if guard_response is not None:
+        return guard_response
     return leader_volunteer_history(volunteer_id)
 
-
+#admin view for sending reminders, reusing event leader template although it is not allowed for now.
 @app.route('/admin/event/<int:event_id>/send-reminder', methods=['POST'])
 def admin_send_reminder(event_id):
-    if not check_admin():
-        if 'loggedin' not in session:
-            return redirect(url_for('login'))
-        return render_template('access_denied.html'), 403
-    return leader_send_reminder(event_id)
+    guard_response = _ensure_admin_logged_in()
+    if guard_response is not None:
+        return guard_response
+    return render_template('access_denied.html'), 403
 
-
+#admin view for viewing feedbacks, not allowed for now but leave it here for future development
 @app.route('/admin/event/<int:event_id>/feedbacks')
 def admin_view_feedbacks(event_id):
-    if not check_admin():
-        if 'loggedin' not in session:
-            return redirect(url_for('login'))
-        return render_template('access_denied.html'), 403
+    guard_response = _ensure_admin_logged_in()
+    if guard_response is not None:
+        return guard_response
     return leader_view_feedbacks(event_id)
 
-
+#for admin manageing users
 @app.route('/admin/users')
 def admin_users():
     """Display a paginated/filterable list of all users."""
-    if not check_admin():
-        if 'loggedin' not in session:
-            return redirect(url_for('login'))
-        return render_template('access_denied.html'), 403
+    guard_response = _ensure_admin_logged_in()
+    if guard_response is not None:
+        return guard_response
 
     q = request.args.get('q', '').strip()
     role_filter = request.args.get('role', '').strip()
@@ -229,15 +162,15 @@ def admin_users():
     with db.get_cursor() as cursor:
         query = 'SELECT * FROM users WHERE 1=1'
         params = []
-
+    #allow search for username, full name, email, role and status,
+    #and may only match for part of the field value
         if q:
             pattern = f"%{q}%"
             query += (
                 ' AND ('
                 'username ILIKE %s OR COALESCE(full_name, \'\') ILIKE %s OR email ILIKE %s '
                 'OR role::text ILIKE %s OR status::text ILIKE %s'
-                ')'
-            )
+                ')')
             params.extend([pattern, pattern, pattern, pattern, pattern])
 
         if role_filter:
@@ -248,7 +181,7 @@ def admin_users():
             query += ' AND status = %s'
             params.append(status_filter)
 
-        query += ' ORDER BY username;'
+        query += ' ORDER BY role DESC, username;'
         cursor.execute(query, tuple(params))
         users = cursor.fetchall()
     return render_template(
@@ -259,13 +192,12 @@ def admin_users():
         status_filter=status_filter
     )
 
-
+#admin to updating user status (active/inactive)
 @app.route('/admin/users/<int:user_id>/status', methods=['POST'])
 def admin_update_status(user_id):
-    if not check_admin():
-        if 'loggedin' not in session:
-            return redirect(url_for('login'))
-        return render_template('access_denied.html'), 403
+    guard_response = _ensure_admin_logged_in()
+    if guard_response is not None:
+        return guard_response
 
     status = request.form.get('status')
     if status in ('active', 'inactive'):
@@ -276,13 +208,12 @@ def admin_update_status(user_id):
         flash('Invalid status value.', 'danger')
     return redirect(url_for('admin_users'))
 
-
+#admin report view, showing different data for admin and event leaders
 @app.route('/admin/reports')
 def admin_reports():
-    if 'loggedin' not in session:
-        return redirect(url_for('login'))
-    if session.get('role') not in ('Event Leaders', 'Administrators'):
-        return render_template('access_denied.html'), 403
+    guard_response = _ensure_leader_or_admin_logged_in()
+    if guard_response is not None:
+        return guard_response
 
     is_admin = session.get('role') == 'Administrators'
     user_id = session.get('user_id')
@@ -310,27 +241,27 @@ def admin_reports():
             )
             engagement = cursor.fetchall()
 
+# Admins see reports for all events
             cursor.execute(
                 '''
-                SELECT e.event_id,
-                       e.event_name,
-                       e.event_date,
-                       e.location_,
-                       e.event_type,
-                       COALESCE(u.full_name, u.username, 'Event Leader') AS leader_name,
-                       COALESCE(reg.reg_count, 0) AS registered_count,
-                       COALESCE(out.num_attendees, 0) AS num_attendees
-                FROM events e
-                LEFT JOIN users u ON e.event_leader_id = u.user_id
+                SELECT t4.event_id,
+                       t4.event_name,
+                       t4.event_date,
+                       t4.location_,
+                       t4.event_type,
+                       COALESCE(t1.full_name, t1.username, 'Event Leader') AS leader_name,
+                       COALESCE(t3.reg_count, 0) AS registered_count,
+                       COALESCE(t5.num_attendees, 0) AS num_attendees
+                FROM events t4
+                LEFT JOIN users t1 ON t4.event_leader_id = t1.user_id
                 LEFT JOIN (
                     SELECT event_id, COUNT(*) AS reg_count
                     FROM eventregistrations
                     GROUP BY event_id
-                ) reg ON reg.event_id = e.event_id
-                LEFT JOIN eventoutcomes out ON out.event_id = e.event_id
-                ORDER BY e.event_date DESC, e.event_id DESC;
-                '''
-            )
+                ) t3 ON t3.event_id = t4.event_id
+                LEFT JOIN eventoutcomes t5 ON t5.event_id = t4.event_id
+                ORDER BY t4.event_date DESC, t4.event_id DESC;
+                ''')
             all_event_reports = cursor.fetchall()
 
             return render_template(
@@ -346,31 +277,31 @@ def admin_reports():
                 all_event_reports=all_event_reports,
                 leader_event_reports=[]
             )
-
+ # Event leaders only see reports for their own events
         cursor.execute(
             '''
-            SELECT e.event_id,
-                   e.event_name,
-                   e.event_date,
-                   e.location_,
-                   COALESCE(out.num_attendees, 0) AS num_attendees,
-                   COALESCE(reg.reg_count, 0) AS registered_count,
-                   COALESCE(fb.feedback_count, 0) AS feedback_count,
-                   COALESCE(fb.avg_rating, 0) AS avg_rating
-            FROM events e
-            LEFT JOIN eventoutcomes out ON out.event_id = e.event_id
+            SELECT t4.event_id,
+                   t4.event_name,
+                   t4.event_date,
+                   t4.location_,
+                   COALESCE(t5.num_attendees, 0) AS num_attendees,
+                   COALESCE(t3.reg_count, 0) AS registered_count,
+                   COALESCE(t2.feedback_count, 0) AS feedback_count,
+                   COALESCE(t2.avg_rating, 0) AS avg_rating
+            FROM events t4
+            LEFT JOIN eventoutcomes t5 ON t5.event_id = t4.event_id
             LEFT JOIN (
                 SELECT event_id, COUNT(*) AS reg_count
                 FROM eventregistrations
                 GROUP BY event_id
-            ) reg ON reg.event_id = e.event_id
+            ) t3 ON t3.event_id = t4.event_id
             LEFT JOIN (
                 SELECT event_id, COUNT(*) AS feedback_count, AVG(rating) AS avg_rating
                 FROM feedback
                 GROUP BY event_id
-            ) fb ON fb.event_id = e.event_id
-            WHERE e.event_leader_id = %s
-            ORDER BY e.event_date DESC;
+            ) t2 ON t2.event_id = t4.event_id
+            WHERE t4.event_leader_id = %s
+            ORDER BY t4.event_date DESC;
             ''',
             (user_id,)
         )
@@ -379,7 +310,6 @@ def admin_reports():
     return render_template(
         'admin_reports.html',
         is_admin=False,
-        leader_event_reports=leader_event_reports
-    )
+        leader_event_reports=leader_event_reports)
 
 

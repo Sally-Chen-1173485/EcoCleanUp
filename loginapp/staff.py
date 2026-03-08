@@ -6,39 +6,47 @@ from flask_bcrypt import Bcrypt
 
 flask_bcrypt = Bcrypt(app)
 
-# Helper functions for checking user roles and validating event form data, 
-# used across multiple staff/admin routes.
-def check_event_leader():
-     """Helper to check if user is logged in and is an Event Leader."""
-     if 'loggedin' not in session:
-          return False
-     return session['role'] == 'Event Leaders'
-
-#Helper to check if user is logged in as an Administrator.
-def check_admin():
-     """Return True if current user is an administrator."""
-     if 'loggedin' not in session:
-          return False
-     return session['role'] == 'Administrators'
-
-#Helper to check if user is logged in as either an Event Leader or an Administrator.
-def check_leader_or_admin():
-     """Return True if the user is either an Event Leader or an Administrator."""
-     if 'loggedin' not in session:
-          return False
-     return session['role'] in ('Event Leaders', 'Administrators')
-
-#Helper function to guard access to routes that require 
-# either Event Leader or Administrator role, 
-# returning appropriate responses if access is denied.
-# so that we can reuse this logic across multiple routes without duplicating.
-def _ensure_leader_or_admin_logged_in():
-     """Guard route access for Event Leaders and Administrators."""
+# Role guard helpers reused across staff routes.
+def _ensure_logged_in_with_roles(*allowed_roles):
+     """Return redirect/403 response when session role is not allowed, else None."""
      if 'loggedin' not in session:
           return redirect(url_for('login'))
-     if session.get('role') not in ('Event Leaders', 'Administrators'):
+     if session.get('role') not in allowed_roles:
           return render_template('access_denied.html'), 403
      return None
+
+#shared guard for both event leaders and admins since they have overlapping access to some routes
+def _ensure_leader_or_admin_logged_in():
+     """Guard route access for Event Leaders and Administrators."""
+     return _ensure_logged_in_with_roles('Event Leaders', 'Administrators')
+
+#guard for routes that only event leaders (not admins) should access, 
+#such as event creation and volunteer management for their events.
+def _ensure_event_leader_logged_in():
+     """Guard route access for Event Leaders only."""
+     return _ensure_logged_in_with_roles('Event Leaders')
+
+
+def build_upcoming_events_query(date_from='', date_to='', location='', event_type=''):
+     """Build SQL and params for upcoming events with optional filters."""
+     query = 'SELECT * FROM events WHERE event_date >= %s'
+     params = [date.today()]
+
+     if date_from:
+          query += ' AND event_date >= %s'
+          params.append(date_from)
+     if date_to:
+          query += ' AND event_date <= %s'
+          params.append(date_to)
+     if location:
+          query += ' AND location_ ILIKE %s'
+          params.append(f"%{location}%")
+     if event_type:
+          query += ' AND event_type ILIKE %s'
+          params.append(event_type)
+
+     query += ' ORDER BY event_date ASC'
+     return query, tuple(params)
 
 # Helper functions for staff/admin routes to read and validate event form data, reduce code duplication.
 def _read_event_form_fields():
@@ -138,35 +146,38 @@ def staff_home():
      date_to = request.args.get('date_to', '')
      location = request.args.get('location', '')
      evtype = request.args.get('event_type', '')
+     past_scope = request.args.get('past_scope', 'all')
+
+     if session.get('role') == 'Event Leaders':
+          if past_scope not in ('all', 'mine'):
+               past_scope = 'all'
+     else:
+          past_scope = 'all'
      
-     query = 'SELECT * FROM events WHERE event_date >= %s'
-     params = [date.today()]
-     if date_from:
-          query += ' AND event_date >= %s'
-          params.append(date_from)
-     if date_to:
-          query += ' AND event_date <= %s'
-          params.append(date_to)
-     if location:
-          query += ' AND location_ ILIKE %s'
-          params.append(f"%{location}%")
-     if evtype:
-          query += ' AND event_type ILIKE %s'
-          params.append(evtype)
-     query += ' ORDER BY event_date ASC'
+     query, params = build_upcoming_events_query(
+          date_from=date_from,
+          date_to=date_to,
+          location=location,
+          event_type=evtype)
 
      with db.get_cursor() as cursor:
-          cursor.execute(query, tuple(params))
+          cursor.execute(query, params)
           upcoming_events = cursor.fetchall()
 
-          cursor.execute(
-              '''
-              SELECT *
-              FROM events
-              WHERE event_date < %s
-              ORDER BY event_date DESC;
-              ''',
-              (date.today(),))
+          past_query = '''
+               SELECT *
+               FROM events
+               WHERE event_date < %s
+          '''
+          past_params = [date.today()]
+
+          # Event leaders can switch between all past events and their own managed past events.
+          if session.get('role') == 'Event Leaders' and past_scope == 'mine':
+               past_query += ' AND event_leader_id = %s'
+               past_params.append(session['user_id'])
+
+          past_query += ' ORDER BY event_date DESC;'
+          cursor.execute(past_query, tuple(past_params))
           past_events = cursor.fetchall()
      
      return render_template(
@@ -179,7 +190,7 @@ def staff_home():
           date_to=date_to,
           location=location,
           event_type=evtype,
-          past_scope='all')
+          past_scope=past_scope)
 
 
 # Handles the report page for event leaders, 
@@ -188,10 +199,9 @@ def staff_home():
 @app.route('/staff/reports')
 def staff_reports():
      """Event leader report page (leader-specific events only)."""
-     if 'loggedin' not in session:
-          return redirect(url_for('login'))
-     if session.get('role') not in ('Event Leaders', 'Administrators'):
-          return render_template('access_denied.html'), 403
+     guard_response = _ensure_leader_or_admin_logged_in()
+     if guard_response is not None:
+          return guard_response
 
      if session.get('role') == 'Administrators':
           return redirect(url_for('admin_reports'))
@@ -234,10 +244,9 @@ def staff_reports():
 @app.route('/staff/event/create', methods=['GET', 'POST'])
 def create_event():
      """Create a new cleanup event."""
-     if 'loggedin' not in session:
-          return redirect(url_for('login'))
-     elif session['role']!='Event Leaders':
-          return render_template('access_denied.html'), 403
+     guard_response = _ensure_event_leader_logged_in()
+     if guard_response is not None:
+          return guard_response
 
      user_id = session['user_id']
      errors = {}
@@ -456,19 +465,16 @@ def cancel_event(event_id):
 @app.route('/staff/event/<int:event_id>/volunteer/<int:volunteer_id>/remove', methods=['POST'])
 def remove_volunteer(event_id, volunteer_id):
      """Remove a volunteer from an event."""
-     guard_response = _ensure_leader_or_admin_logged_in()
+     guard_response = _ensure_event_leader_logged_in()
      if guard_response is not None:
           return guard_response
 
      user_id = session['user_id']
 
      with db.get_cursor() as cursor:
-          if session['role'] == 'Administrators':
-               cursor.execute('SELECT * FROM events WHERE event_id = %s;', (event_id,))
-          else:
-               cursor.execute(
-                   'SELECT * FROM events WHERE event_id = %s AND event_leader_id = %s;',
-                   (event_id, user_id))
+          cursor.execute(
+              'SELECT * FROM events WHERE event_id = %s AND event_leader_id = %s;',
+              (event_id, user_id))
           if not cursor.fetchone():
                flash('Event not found or you do not have permission.', 'danger')
                return redirect(url_for('staff_home'))
@@ -491,8 +497,8 @@ def remove_volunteer(event_id, volunteer_id):
 # allowing them to track and update volunteer attendance for an event they lead.
 @app.route('/staff/event/<int:event_id>/attendance', methods=['GET', 'POST'])
 def manage_attendance(event_id):
-     """Track and update volunteer attendance."""
-     guard_response = _ensure_leader_or_admin_logged_in()
+     
+     guard_response = _ensure_event_leader_logged_in()
      if guard_response is not None:
           return guard_response
 
@@ -501,22 +507,24 @@ def manage_attendance(event_id):
      valid_attendance_statuses = ('Present', 'Absent', 'Late', 'Excused', 'Pending')
 
      with db.get_cursor() as cursor:
-          if session['role'] == 'Administrators':
-               cursor.execute('SELECT * FROM events WHERE event_id = %s;', (event_id,))
-          else:
-               cursor.execute(
+          
+          cursor.execute(
                    'SELECT * FROM events WHERE event_id = %s AND event_leader_id = %s;',
                    (event_id, user_id))
           event = cursor.fetchone()
+
           if not event:
                flash('Event not found or you do not have permission.', 'danger')
                return redirect(url_for('staff_home'))
-
+          
+          #find all volunteers registered for this event 
+          #update attendance if this is a POST request with attendance updates
           if request.method == 'POST':
                cursor.execute(
                    'SELECT registration_id FROM eventregistrations WHERE event_id = %s;',
                    (event_id,))
                volunteers = cursor.fetchall()
+
                for vol in volunteers:
                     registration_id = vol['registration_id']
                     attendance = request.form.get(f'attendance_{registration_id}')
@@ -526,7 +534,6 @@ def manage_attendance(event_id):
                              'WHERE event_id = %s AND registration_id = %s;',
                              (attendance, event_id, registration_id))
                flash('Attendance updated successfully!', 'success')
-
                return redirect(url_for('manage_attendance', event_id=event_id))
 
           # Fetch volunteers with current attendance
@@ -545,10 +552,14 @@ def manage_attendance(event_id):
      return render_template('manage_attendance.html', event=event, volunteers=volunteers,
                             attendance_statuses=valid_attendance_statuses)
 
+
+
+#Handles the event outcome recording page for event leaders, 
+# allowing them to record outcomes for an event they lead,
 @app.route('/staff/event/<int:event_id>/outcome', methods=['GET', 'POST'])
 def record_outcome(event_id):
      """Record event outcomes (attendees, bags, recyclables)."""
-     guard_response = _ensure_leader_or_admin_logged_in()
+     guard_response = _ensure_event_leader_logged_in()
      if guard_response is not None:
           return guard_response
 
@@ -560,6 +571,7 @@ def record_outcome(event_id):
               'SELECT * FROM events WHERE event_id = %s AND event_leader_id = %s;',
               (event_id, user_id))
           event = cursor.fetchone()
+
           if not event:
                flash('Event not found or you do not have permission.', 'danger')
                return redirect(url_for('staff_home'))
@@ -591,11 +603,11 @@ def record_outcome(event_id):
                              (num_attendees, bags_collected, recyclables_sorted,
                               other_achievements, event_id))
                     else:
-                         # Something to do with the sequence to avoid conflict if outcome_id is ever used as a reference in the future
+                         # By AI. Something to do with the sequence to avoid conflict if outcome_id is ever used as a reference in the future
                          cursor.execute(
                              "SELECT setval(pg_get_serial_sequence('eventoutcomes', 'outcome_id'), "
-                             "COALESCE((SELECT MAX(outcome_id) FROM eventoutcomes), 0) + 1, FALSE);"
-                         )
+                             "COALESCE((SELECT MAX(outcome_id) FROM eventoutcomes), 0) + 1, FALSE);")
+                         # Then insert the new outcome record
                          cursor.execute(
                              'INSERT INTO eventoutcomes '
                              '(event_id, num_attendees, bags_collected, recyclables_sorted, '
@@ -608,10 +620,14 @@ def record_outcome(event_id):
 
      return render_template('record_outcome.html', event=event, outcome=outcome, errors=errors)
 
+
+
+#Handles the volunteer history page for event leaders, 
+# allowing viewing a volunteer's participation history across all events,
 @app.route('/staff/volunteer/<int:volunteer_id>/history')
 def volunteer_history(volunteer_id):
      """View a volunteer's participation history."""
-     guard_response = _ensure_leader_or_admin_logged_in()
+     guard_response = _ensure_event_leader_logged_in()
      if guard_response is not None:
           return guard_response
 
@@ -637,25 +653,24 @@ def volunteer_history(volunteer_id):
 
      return render_template('volunteer_history.html', volunteer=volunteer, events=events)
 
+
+#Handles the event reminder sending route for event leaders, 
+# allowing them to send reminders to volunteers registered for an upcoming event.
 @app.route('/staff/event/<int:event_id>/send-reminder', methods=['POST'])
 def send_reminder(event_id):
      """Send event reminder to registered volunteers."""
-     guard_response = _ensure_leader_or_admin_logged_in()
+     guard_response = _ensure_event_leader_logged_in()
      if guard_response is not None:
           return guard_response
 
      user_id = session['user_id']
-     is_admin = session['role'] == 'Administrators'
      volunteers = []
-     reminder_columns_ready = False
 
      with db.get_cursor() as cursor:
-          if is_admin:
-               cursor.execute('SELECT * FROM events WHERE event_id = %s;', (event_id,))
-          else:
-               cursor.execute(
-                   'SELECT * FROM events WHERE event_id = %s AND event_leader_id = %s;',
-                   (event_id, user_id))
+          cursor.execute(
+               'SELECT * FROM events WHERE event_id = %s AND event_leader_id = %s;',
+               (event_id, user_id)
+          )
           event = cursor.fetchone()
           if not event:
                flash('Event not found or you do not have permission.', 'danger')
@@ -669,18 +684,7 @@ def send_reminder(event_id):
               (event_id,))
           volunteers = cursor.fetchall()
 
-          cursor.execute(
-              '''
-              SELECT COUNT(*) AS cnt
-              FROM information_schema.columns
-              WHERE table_schema = current_schema()
-                AND table_name = 'eventregistrations'
-                AND column_name IN ('reminder_pending', 'reminder_sent_at', 'reminder_message');
-              '''
-          )
-          reminder_columns_ready = cursor.fetchone()['cnt'] == 3
-
-          if volunteers and reminder_columns_ready:
+          if volunteers:
                reminder_message = f"Reminder: {event['event_name']} is coming up on {event['event_date'].strftime('%Y-%m-%d')}."
                cursor.execute(
                     '''
@@ -693,19 +697,21 @@ def send_reminder(event_id):
                     (reminder_message, event_id)
                )
 
-     if volunteers and reminder_columns_ready:
+     if volunteers:
           flash(f'Reminder sent to {len(volunteers)} volunteer(s) for {event["event_name"]}.', 'success')
-     elif volunteers:
-          flash('Registered volunteers found, but reminder columns are missing in database. Please update schema to enable popup reminders.', 'warning')
      else:
           flash('No registered volunteers to send reminder to.', 'info')
 
      return redirect(url_for('event_detail', event_id=event_id))
 
+
+
+
+#handles feedback viewing page for event leaders,
 @app.route('/staff/event/<int:event_id>/feedbacks')
 def view_feedbacks(event_id):
      """View all feedbacks for an event."""
-     guard_response = _ensure_leader_or_admin_logged_in()
+     guard_response = _ensure_event_leader_logged_in()
      if guard_response is not None:
           return guard_response
 

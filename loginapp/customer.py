@@ -1,5 +1,6 @@
 from loginapp import app
 from loginapp import db
+from loginapp.staff import build_upcoming_events_query
 from flask import redirect, render_template, session, url_for, request, flash
 from datetime import date, datetime
 
@@ -155,26 +156,16 @@ def customer_home():
      if past_scope not in ('all', 'mine'):
           past_scope = 'all'
 
-     #Use a dynamic query with filters based on the provided search criteria.
-     query = 'SELECT * FROM events WHERE event_date >= %s'
-     params = [date.today()]
-     if date_from:
-          query += ' AND event_date >= %s'
-          params.append(date_from)
-     if date_to:
-          query += ' AND event_date <= %s'
-          params.append(date_to)
-     if location:
-          query += ' AND location_ ILIKE %s'
-          params.append(f"%{location}%")
-     if evtype:
-          query += ' AND event_type ILIKE %s'
-          params.append(evtype)
-     query += ' ORDER BY event_date ASC'
+     # Use shared helper to keep event filter SQL consistent across modules.
+     query, params = build_upcoming_events_query(
+          date_from=date_from,
+          date_to=date_to,
+          location=location,
+          event_type=evtype)
 
      with db.get_cursor() as cursor:
           #Handles event filtering based on search criteria
-          cursor.execute(query, tuple(params))
+          cursor.execute(query, params)
           upcoming_events = cursor.fetchall()
 
           #Handle all registered events
@@ -246,7 +237,8 @@ def customer_home():
                cursor.execute(
                     'UPDATE eventregistrations SET reminder_pending = FALSE WHERE registration_id = ANY(%s);',
                     (reminder_ids,))
-               
+
+
 
      return render_template(
           'customer_home.html',

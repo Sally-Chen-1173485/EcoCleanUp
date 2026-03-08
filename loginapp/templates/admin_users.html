@@ -10,6 +10,19 @@
         <div class="col-lg-8">
             <h1>User Management</h1>
 
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="mb-3">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
 
       
 
@@ -22,7 +35,7 @@
                     <label for="role" class="form-label">Role</label>
                     <select id="role" name="role" class="form-select">
                         <option value="" {% if not role_filter %}selected{% endif %}>All</option>
-                        <option value="Volunteers" {% if role_filter == 'Volunteers' %}selected{% endif %}>Volunteers</option>
+                        <option value="Volunteers" {% if role_filter == 'Volunteers' %}selected{% endif %}> Volunteers</option>
                         <option value="Event Leaders" {% if role_filter == 'Event Leaders' %}selected{% endif %}>Event Leaders</option>
                         <option value="Administrators" {% if role_filter == 'Administrators' %}selected{% endif %}>Administrators</option>
                     </select>
@@ -44,7 +57,7 @@
             {% if users %}
             <div class="table-responsive">
                 <table class="table table-hover">
-                    <thead class="table-light">
+                    <thead class="table-primary">
                         <tr>
                             <th>Username</th>
                             <th>Name</th>
@@ -60,8 +73,22 @@
                             <td>{{ u.username }}</td>
                             <td>{{ u.full_name }}</td>
                             <td>{{ u.email }}</td>
-                            <td>{{ u.role }}</td>
+                            <td>
+                                {% if u.role == 'Event Leaders' %}
+                                <span class="badge bg-success">{{ u.role }}</span>
+                                {% elif u.role == 'Administrators' %}
+                                <span class="badge bg-primary">{{ u.role }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ u.role }}</span>
+                                {% endif %}
+                            </td>
                             <td>{{ u.status }}</td>
+                            <td>{% if u.status=='inactive' %}
+                                <span class="badge bg-warning">{{ u.status }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ u.status }}</span>
+                                {% endif %}
+                            </td>
                             <td>
                                 <form method="post" action="{{ url_for('admin_update_status', user_id=u.user_id) }}" class="d-inline">
                                     <select name="status" class="form-select form-select-sm d-inline w-auto">

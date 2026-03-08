@@ -26,7 +26,7 @@
             {% if attendance_counts %}
             <div class="table-responsive">
                 <table class="table table-sm">
-                    <thead><tr><th>Status</th><th>Count</th></tr></thead>
+                    <thead class="table-primary"><tr><th>Status</th><th>Count</th></tr></thead>
                     <tbody>
                         {% for row in attendance_counts %}
                         <tr><td>{{ row.attendance }}</td><td>{{ row.cnt }}</td></tr>
@@ -42,7 +42,7 @@
             {% if engagement %}
             <div class="table-responsive">
                 <table class="table table-hover">
-                    <thead><tr><th>Volunteer</th><th>Registrations</th></tr></thead>
+                    <thead class="table-primary"><tr><th>Volunteer</th><th>Registrations</th></tr></thead>
                     <tbody>
                         {% for row in engagement %}
                         <tr>
@@ -61,7 +61,7 @@
             {% if all_event_reports %}
             <div class="table-responsive">
                 <table class="table table-hover">
-                    <thead class="table-light">
+                    <thead class="table-primary">
                         <tr>
                             <th>Date</th>
                             <th>Event</th>
@@ -94,7 +94,7 @@
             {% if leader_event_reports %}
             <div class="table-responsive">
                 <table class="table table-hover">
-                    <thead class="table-light">
+                    <thead class="table-primary">
                         <tr>
                             <th>Date</th>
                             <th>Event</th>

@@ -10,112 +10,12 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <h1 class="text-center">Administrators Dashboard</h1>
-            
-            <div class="tab-content pt-4" id="adminTabContent">
-                <div class="tab-pane fade show active" id="overview" role="tabpanel">
-                    <p class="lead text-muted text-center">Use the tabs to review users, reports or events.</p>
-                    <div class="d-flex justify-content-center gap-3 mb-3">
-                        <a href="{{ url_for('admin_events') }}" class="btn btn-primary">Browse Events</a>
-                        <a href="{{ url_for('admin_users') }}" class="btn btn-secondary">Manage Users</a>
-                        <a href="{{ url_for('admin_reports') }}" class="btn btn-info">View Reports</a>
-                    </div>
-                </div>
-                <div class="tab-pane fade" id="users" role="tabpanel">
-                    <!-- embed admin_users content -->
-                    <form class="mb-4" method="get" action="{{ url_for('admin_home') }}">
-                        <div class="input-group">
-                            <input type="text" name="q" class="form-control" placeholder="Search by username, name, email or role" value="{{ q }}">
-                            <button class="btn btn-primary" type="submit">Search</button>
-                        </div>
-                    </form>
-                    {% if users %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Username</th>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Role</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for u in users %}
-                                <tr>
-                                    <td>{{ u.username }}</td>
-                                    <td>{{ u.full_name }}</td>
-                                    <td>{{ u.email }}</td>
-                                    <td>{{ u.role }}</td>
-                                    <td>{{ u.status }}</td>
-                                    <td>
-                                        <form method="post" action="{{ url_for('admin_update_status', user_id=u.user_id) }}" class="d-inline">
-                                            <select name="status" class="form-select form-select-sm d-inline w-auto">
-                                                <option value="active" {% if u.status=='active' %}selected{% endif %}>active</option>
-                                                <option value="nonactive" {% if u.status=='nonactive' %}selected{% endif %}>nonactive</option>
-                                                <option value="banned" {% if u.status=='banned' %}selected{% endif %}>banned</option>
-                                                <option value="suspended" {% if u.status=='suspended' %}selected{% endif %}>suspended</option>
-                                            </select>
-                                            <button class="btn btn-sm btn-secondary">Update</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <div class="alert alert-info">No users found.</div>
-                    {% endif %}
-                </div>
-                <div class="tab-pane fade" id="reports" role="tabpanel">
-                    <!-- embed admin_reports content -->
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <ul>
-                                <li><strong>Total events:</strong> {{ total_events }}</li>
-                                <li><strong>Total volunteers:</strong> {{ total_volunteers }}</li>
-                                <li><strong>Total event leaders:</strong> {{ total_leaders }}</li>
-                                <li><strong>Total feedbacks:</strong> {{ total_feedbacks }}</li>
-                                <li><strong>Average rating:</strong> {{ '%.2f'|format(avg_rating) }}</li>
-                            </ul>
-                        </div>
-                    </div>
-                    <h3>Attendance Counts</h3>
-                    {% if attendance_counts %}
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead><tr><th>Status</th><th>Count</th></tr></thead>
-                            <tbody>
-                                {% for row in attendance_counts %}
-                                <tr><td>{{ row.attendance }}</td><td>{{ row.cnt }}</td></tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="text-muted">No attendance data available.</p>
-                    {% endif %}
-
-                    <h3 class="mt-4">Volunteer Engagement</h3>
-                    {% if engagement %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead><tr><th>Volunteer</th><th>Registrations</th></tr></thead>
-                            <tbody>
-                                {% for row in engagement %}
-                                <tr>
-                                    <td>{{ row.full_name }} ({{ row.user_id }})</td>
-                                    <td>{{ row.reg_count }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="text-muted">No engagement data available.</p>
-                    {% endif %}
+            <div class="pt-4">
+                <p class="lead text-muted text-center">Use quick links to review events, users, and reports.</p>
+                <div class="d-flex justify-content-center gap-3 mb-3 flex-wrap">
+                    <a href="{{ url_for('admin_events') }}" class="btn btn-primary">Browse Events</a>
+                    <a href="{{ url_for('admin_users') }}" class="btn btn-secondary">Manage Users</a>
+                    <a href="{{ url_for('admin_reports') }}" class="btn btn-info">View Reports</a>
                 </div>
             </div>
         </div>
