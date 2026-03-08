@@ -53,8 +53,8 @@
             {% if not is_admin %}
             <div class="mb-4">
                 <div class="btn-group w-100 flex-wrap" role="group">
-                    <a href="{{ manage_attendance_url }}" class="btn btn-outline-primary">Track Attendance</a>
-                    <a href="{{ record_outcome_url }}" class="btn btn-outline-success">Record Outcome</a>
+                    <a href="{{ manage_attendance_url }}" class="btn btn-outline-primary">Manage Attendance</a>
+                    <a href="{{ record_outcome_url }}" class="btn btn-outline-success">Record Event Outcome</a>
                     <form method="post" action="{{ send_reminder_url }}" style="display: inline;" onsubmit="return confirm('Send reminder to all registered volunteers?')">
                         <button type="submit" class="btn btn-outline-info">Send Reminder</button>
                     </form>
