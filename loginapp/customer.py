@@ -85,42 +85,44 @@ def customer_home():
                     )
                     if cursor.fetchone():
                          flash('You are already registered for that event.', 'info')
-                    # Check for time conflicts with existing registrations. 
-                         cursor.execute('''
-                              SELECT t4.event_name, t4.start_time, t4.end_time
-                              FROM eventregistrations t3
-                              JOIN events t4 ON t4.event_id = t3.event_id
-                              WHERE t3.volunteer_id = %s
-                                AND t4.event_date = %s
-                                AND t4.event_id <> %s
-                                AND (
-                                     %s IS NULL OR %s IS NULL
-                                     OR t4.start_time IS NULL OR t4.end_time IS NULL
-                                     OR (t4.start_time < %s AND t4.end_time > %s)
-                                )
-                              LIMIT 1;
-                         ''', (
-                              user_id,
-                              selected_event['event_date'],
-                              selected_event['event_id'],
-                              selected_event['start_time'],
-                              selected_event['end_time'],
-                              selected_event['end_time'],
-                              selected_event['start_time']
-                         ))
-                         conflicting_event = cursor.fetchone()
+                         return redirect(url_for('customer_home'))
 
-                         if conflicting_event:
-                              flash('You cannot register for another event at the same time (or same date when time is unspecified).', 'warning')
-                              return redirect(url_for('customer_home'))
+                    # Check for time conflicts with existing registrations.
+                    cursor.execute('''
+                         SELECT t4.event_name, t4.start_time, t4.end_time
+                         FROM eventregistrations t3
+                         JOIN events t4 ON t4.event_id = t3.event_id
+                         WHERE t3.volunteer_id = %s
+                           AND t4.event_date = %s
+                           AND t4.event_id <> %s
+                           AND (
+                                %s IS NULL OR %s IS NULL
+                                OR t4.start_time IS NULL OR t4.end_time IS NULL
+                                OR (t4.start_time < %s AND t4.end_time > %s)
+                           )
+                         LIMIT 1;
+                    ''', (
+                         user_id,
+                         selected_event['event_date'],
+                         selected_event['event_id'],
+                         selected_event['start_time'],
+                         selected_event['end_time'],
+                         selected_event['end_time'],
+                         selected_event['start_time']
+                    ))
+                    conflicting_event = cursor.fetchone()
 
-                         cursor.execute(
-                              'INSERT INTO eventregistrations '
-                              '(event_id, volunteer_id, registered_at) '
-                              'VALUES (%s, %s, NOW());',
-                              (event_id, user_id)
-                         )
-                         flash('Registration successful!', 'success')
+                    if conflicting_event:
+                         flash('You cannot register for another event at the same time (or same date when time is unspecified).', 'warning')
+                         return redirect(url_for('customer_home'))
+
+                    cursor.execute(
+                         'INSERT INTO eventregistrations '
+                         '(event_id, volunteer_id, registered_at) '
+                         'VALUES (%s, %s, NOW());',
+                         (event_id, user_id)
+                    )
+                    flash('Registration successful!', 'success')
 
           elif 'feedback_event' in request.form:
                event_id = request.form.get('event_id')
